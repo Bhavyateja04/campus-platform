@@ -5,4 +5,5 @@ const { updatePassword } = require("../controllers/UserController");
 
 router.put("/update-password", updatePassword);
 
+
 module.exports = router;
