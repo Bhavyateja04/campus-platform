@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -7,155 +8,98 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 
 const { width } = Dimensions.get('window');
-
-// Mock data for canteen menu items
-const MENU_DATA = [
-  {
-    id: '1',
-    name: 'Chicken Biryani',
-    price: 120,
-    canteen: 'Satya Canteen',
-    available: true,
-    image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400',
-  },
-  {
-    id: '2',
-    name: 'Veg Fried Rice',
-    price: 80,
-    canteen: 'Satya Canteen',
-    available: true,
-    image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
-  },
-  {
-    id: '3',
-    name: 'Dum Biryani',
-    price: 150,
-    canteen: 'Pencil Canteen',
-    available: false,
-    image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=400',
-  },
-  {
-    id: '4',
-    name: 'Chicken Fry Piece',
-    price: 100,
-    canteen: 'Aparna Canteen',
-    available: true,
-    image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400',
-  },
-  {
-    id: '5',
-    name: 'Egg Fried Rice',
-    price: 90,
-    canteen: 'Satya Canteen',
-    available: true,
-    image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400',
-  },
-  {
-    id: '6',
-    name: 'Paneer Biryani',
-    price: 110,
-    canteen: 'Pencil Canteen',
-    available: true,
-    image: 'https://images.unsplash.com/photo-1596560548464-f010549b84d7?w=400',
-  },
-  {
-    id: '7',
-    name: 'Mutton Biryani',
-    price: 180,
-    canteen: 'Aparna Canteen',
-    available: false,
-    image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400',
-  },
-  {
-    id: '8',
-    name: 'Schezwan Fried Rice',
-    price: 95,
-    canteen: 'Pencil Canteen',
-    available: true,
-    image: 'https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400',
-  },
-  {
-    id: '9',
-    name: 'Fish Fry',
-    price: 130,
-    canteen: 'Satya Canteen',
-    available: true,
-    image: 'https://images.unsplash.com/photo-1580217593608-61931cefc821?w=400',
-  },
-  {
-    id: '10',
-    name: 'Prawn Biryani',
-    price: 200,
-    canteen: 'Aparna Canteen',
-    available: true,
-    image: 'https://images.unsplash.com/photo-1633945274309-62e1d4f8651d?w=400',
-  },
-  {
-    id: '11',
-    name: 'Chicken 65',
-    price: 140,
-    canteen: 'Pencil Canteen',
-    available: true,
-    image: 'https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?w=400',
-  },
-  {
-    id: '12',
-    name: 'Mixed Fried Rice',
-    price: 105,
-    canteen: 'Aparna Canteen',
-    available: false,
-    image: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=400',
-  },
-];
-
 const CANTEENS = [
   'All Canteens',
   'Satya Canteen',
   'Pencil Canteen',
   'Aparna Canteen',
 ];
-
 const CanteenMenuScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCanteen, setSelectedCanteen] = useState('All Canteens');
   const [showCanteenDropdown, setShowCanteenDropdown] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [menuData, setMenuData] = useState([]);
+ const [loading, setLoading] = useState(true);
 
-  // Filter menu items based on search and canteen selection
-  const filteredItems = useMemo(() => {
-    return MENU_DATA.filter((item) => {
-      const matchesSearch = item.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      const matchesCanteen =
-        selectedCanteen === 'All Canteens' || item.canteen === selectedCanteen;
-      return matchesSearch && matchesCanteen;
+useEffect(() => {
+  fetch("http://192.168.1.7:5000/menu")
+    .then(res => res.json())
+    .then(data => {
+      console.log("API DATA:", data);
+      setMenuData(data.data || data);
+      setLoading(false);   
+    })
+    .catch(err => {
+      console.log(err);
+      setLoading(false);
     });
-  }, [searchQuery, selectedCanteen]);
+}, []);
+
+const filteredItems = useMemo(() => {
+  if (!Array.isArray(menuData)) return [];
+
+  return menuData.filter((item) => {
+    const q = searchQuery.toLowerCase();
+
+    return (
+      (!q || (item?.name && item.name.toLowerCase().includes(q))) &&
+      (selectedCanteen === 'All Canteens' || item?.canteen === selectedCanteen)
+    );
+  });
+}, [searchQuery, selectedCanteen, menuData]);
+if (loading) {
+  return (
+    <View style={{ flex:1, justifyContent:'center', alignItems:'center' }}>
+      <ActivityIndicator size="large" color="#6B46C1" />
+      <Text style={{ marginTop:10 }}>Loading menu...</Text>
+    </View>
+  );
+}
 
   const handleCanteenSelect = (canteen) => {
     setSelectedCanteen(canteen);
     setShowCanteenDropdown(false);
   };
 
-  const clearSearch = () => {
-    setSearchQuery('');
-  };
+  const clearSearch = () => setSearchQuery('');
 
   const goBack = () => {
-    navigation.goBack();
-    // or navigation.navigate('Home');
+    if (navigation?.canGoBack()) {
+      navigation.goBack();
+    }
   };
-
   const renderMenuItem = ({ item }) => (
-    <TouchableOpacity style={styles.menuCard} activeOpacity={0.9}>
-      <Image source={{ uri: item.image }} style={styles.foodImage} />
+    <TouchableOpacity
+      style={styles.menuCard}
+      activeOpacity={0.88}
+      onPress={() => {}}
+    >
+      <View style={styles.imageWrapper}>
+        <Image source={{ uri: item.image || 'https://via.placeholder.com/150' }} />
+        <View
+          style={[
+            styles.availabilityBadge,
+            { backgroundColor: item.available ? '#E8F5E9' : '#FFEBEE' },
+          ]}
+        >
+          <Text
+            style={[
+              styles.availabilityText,
+              { color: item.available ? '#2E7D32' : '#C62828' },
+            ]}
+          >
+            {item.available ? 'Available' : 'Unavailable'}
+          </Text>
+        </View>
+      </View>
 
       <View style={styles.cardContent}>
         <Text style={styles.itemName} numberOfLines={1}>
@@ -164,147 +108,169 @@ const CanteenMenuScreen = ({ navigation }) => {
         <Text style={styles.canteenName} numberOfLines={1}>
           {item.canteen}
         </Text>
-
-        <View style={styles.cardFooter}>
-          <Text style={styles.price}>₹{item.price}</Text>
-          <View
-            style={[
-              styles.availabilityBadge,
-              {
-                backgroundColor: item.available ? '#E8F5E9' : '#FFEBEE',
-              },
-            ]}>
-            <Text
-              style={[
-                styles.availabilityText,
-                {
-                  color: item.available ? '#2E7D32' : '#C62828',
-                },
-              ]}>
-              {item.available ? 'Available' : 'Not Available'}
-            </Text>
-          </View>
-        </View>
+        <Text style={styles.price}>₹{item.price}</Text>
       </View>
     </TouchableOpacity>
   );
-
   const renderDropdownItem = (canteen, index) => {
     const isSelected = selectedCanteen === canteen;
+    const isLast = index === CANTEENS.length - 1;
     return (
       <TouchableOpacity
         key={index}
         style={[
           styles.dropdownItem,
           isSelected && styles.selectedDropdownItem,
+          isLast && { borderBottomWidth: 0 },
         ]}
-        onPress={() => handleCanteenSelect(canteen)}>
+        onPress={() => handleCanteenSelect(canteen)}
+        activeOpacity={0.7}
+      >
         <Text
           style={[
             styles.dropdownItemText,
             isSelected && styles.selectedDropdownItemText,
-          ]}>
+          ]}
+        >
           {canteen}
         </Text>
         {isSelected && <Text style={styles.checkmark}>✓</Text>}
       </TouchableOpacity>
     );
   };
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#6B46C1" />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={goBack}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Canteen Menu</Text>
-        <View style={styles.placeholder} />
-      </View>
-
-      {/* Search and Filter Section */}
+  const ListHeader = () => (
+    <>
       <View style={styles.searchSection}>
-        {/* Food Item Search Bar */}
         <View style={styles.searchBar}>
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             style={styles.searchInput}
             placeholder="Search food items..."
-            placeholderTextColor="#999"
+            placeholderTextColor="#aaa"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={clearSearch}>
+            <TouchableOpacity onPress={clearSearch} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={styles.clearIcon}>✕</Text>
             </TouchableOpacity>
           )}
         </View>
-
-        {/* Canteen Selector */}
         <View style={styles.canteenSelector}>
           <TouchableOpacity
-            style={styles.dropdownButton}
-            onPress={() => setShowCanteenDropdown(!showCanteenDropdown)}>
+            style={[
+              styles.dropdownButton,
+              showCanteenDropdown && styles.dropdownButtonActive,
+            ]}
+            onPress={() => setShowOverlay(true)}
+            activeOpacity={0.8}
+          >
             <Text style={styles.canteenIcon}>🏪</Text>
-            <Text style={styles.selectedCanteen} numberOfLines={1}>
+            <Text style={styles.selectedCanteenText} numberOfLines={1}>
               {selectedCanteen}
             </Text>
             <Text
               style={[
-                styles.dropdownIcon,
-                showCanteenDropdown && styles.dropdownIconOpen,
-              ]}>
+                styles.dropdownArrow,
+                showCanteenDropdown && styles.dropdownArrowOpen,
+              ]}
+            >
               ▼
             </Text>
           </TouchableOpacity>
-
-          {showCanteenDropdown && (
-            <View style={styles.dropdown}>
-              <ScrollView
-                style={styles.dropdownScroll}
-                nestedScrollEnabled={true}>
-                {CANTEENS.map((canteen, index) =>
-                  renderDropdownItem(canteen, index)
-                )}
-              </ScrollView>
-            </View>
-          )}
         </View>
       </View>
-
-      {/* Results Info */}
       <View style={styles.resultsInfo}>
         <Text style={styles.resultsText}>
           {filteredItems.length}{' '}
           {filteredItems.length === 1 ? 'item' : 'items'} found
         </Text>
+        {selectedCanteen !== 'All Canteens' && (
+          <TouchableOpacity onPress={() => setSelectedCanteen('All Canteens')}>
+            <Text style={styles.clearFilterText}>Clear filter ✕</Text>
+          </TouchableOpacity>
+        )}
       </View>
+    </>
+  );
+  const EmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyIcon}>🍽️</Text>
+      <Text style={styles.emptyText}>No items found</Text>
+      <Text style={styles.emptySubtext}>
+        Try adjusting your search or filters
+      </Text>
+    </View>
+  );
+  return (
+    <SafeAreaView style={styles.container} edges={['left','right','bottom']}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.headerIconBtn}
+          onPress={goBack}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
 
-      {/* Menu Items Grid */}
-      <FlatList
-        data={filteredItems}
-        renderItem={renderMenuItem}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        contentContainerStyle={styles.menuList}
-        showsVerticalScrollIndicator={false}
-        columnWrapperStyle={styles.row}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>🍽️</Text>
-            <Text style={styles.emptyText}>No items found</Text>
-            <Text style={styles.emptySubtext}>
-              Try adjusting your search or filters
-            </Text>
-          </View>
-        }
-      />
+        <View style={styles.headerTitleBlock}>
+          <Text style={styles.headerTitle}>Canteen Menu</Text>
+          <Text style={styles.headerSubtitle}>{menuData.length} items</Text>
+        </View>
+
+        <View style={styles.headerIconBtn} />
+      </View>
+      <View style={styles.listWrapper}>
+        <FlatList
+          data={filteredItems}
+          renderItem={renderMenuItem}
+          keyExtractor={(item) => String(item.id)}
+          numColumns={2}
+          ListHeaderComponent={<ListHeader />}
+          ListEmptyComponent={<EmptyComponent />}
+          contentContainerStyle={styles.menuList}
+          columnWrapperStyle={styles.row}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        />
+      </View>
+      {showOverlay && (
+  <TouchableOpacity
+    style={styles.overlay}
+    activeOpacity={1}
+    onPress={() => setShowOverlay(false)}
+  >
+    <View style={styles.overlayDropdown}>
+      {CANTEENS.map((canteen, index) => {
+        const isSelected = selectedCanteen === canteen;
+
+        return (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.dropdownItem,
+              isSelected && styles.selectedDropdownItem,
+            ]}
+            onPress={() => {
+              setSelectedCanteen(canteen);
+              setShowOverlay(false);
+            }}
+          >
+            <Text style={styles.dropdownItemText}>{canteen}</Text>
+            {isSelected && <Text style={styles.checkmark}>✓</Text>}
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  </TouchableOpacity>
+)}
     </SafeAreaView>
   );
 };
+const CARD_WIDTH = (width - 36) / 2;
 
 const styles = StyleSheet.create({
   container: {
@@ -318,40 +284,58 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    elevation: 6,
+    shadowColor: '#6B46C1',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  marginTop: 0,
+  paddingTop: 10,
   },
-  backButton: {
-    padding: 4,
+  headerIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   backIcon: {
-    fontSize: 28,
+    fontSize: 20,
     color: '#FFF',
-    fontWeight: 'bold',
+    fontWeight: '700',
+    lineHeight: 22,
+  },
+  headerTitleBlock: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: '#FFF',
-    flex: 1,
-    textAlign: 'center',
+    letterSpacing: 0.2,
   },
-  placeholder: {
-    width: 36,
+  headerSubtitle: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 1,
   },
+ listWrapper: {
+  zIndex: 0,
+}, 
   searchSection: {
     backgroundColor: '#FFF',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    elevation: 2,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 14,
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+  zIndex: 9999,
+  elevation: 10,
   },
   searchBar: {
     flexDirection: 'row',
@@ -359,190 +343,229 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8F9FA',
     borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 11,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#E8E8E8',
   },
   searchIcon: {
-    fontSize: 18,
-    marginRight: 10,
+    fontSize: 16,
+    marginRight: 9,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     color: '#333',
     padding: 0,
+    lineHeight: 18,
   },
   clearIcon: {
-    fontSize: 18,
-    color: '#999',
+    fontSize: 14,
+    color: '#aaa',
     paddingLeft: 10,
   },
   canteenSelector: {
-    position: 'relative',
-    zIndex: 1000,
-  },
+  position: 'relative',
+  zIndex: 9999,
+},
   dropdownButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F8F9FA',
     borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderWidth: 1,
+    paddingVertical: 11,
+    borderWidth: 1.5,
     borderColor: '#E0E0E0',
   },
+  dropdownButtonActive: {
+    borderColor: '#6B46C1',
+    backgroundColor: '#FAF7FF',
+  },
   canteenIcon: {
-    fontSize: 18,
-    marginRight: 10,
+    fontSize: 16,
+    marginRight: 9,
   },
-  selectedCanteen: {
+  selectedCanteenText: {
     flex: 1,
-    fontSize: 15,
-    color: '#333',
+    fontSize: 14,
     fontWeight: '500',
+    color: '#333',
   },
-  dropdownIcon: {
+  dropdownArrow: {
     fontSize: 10,
-    color: '#666',
+    color: '#888',
     marginLeft: 8,
   },
-  dropdownIconOpen: {
+  dropdownArrowOpen: {
+    color: '#6B46C1',
     transform: [{ rotate: '180deg' }],
   },
-  dropdown: {
-    position: 'absolute',
-    top: 50,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    maxHeight: 200,
-    zIndex: 2000,
-  },
+ dropdown: {
+  position: 'absolute',
+  top: 55,
+  left: 0,
+  right: 0,
+  backgroundColor: '#FFF',
+  borderRadius: 14,
+
+  elevation: 20,        
+  zIndex: 9999,         
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.2,
+  shadowRadius: 6,
+},
   dropdownScroll: {
-    maxHeight: 200,
+    maxHeight: 220,
   },
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
+    paddingVertical: 13,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: '#F5F5F5',
   },
   selectedDropdownItem: {
     backgroundColor: '#F3E8FF',
   },
   dropdownItemText: {
-    fontSize: 15,
-    color: '#333',
+    fontSize: 14,
+    color: '#444',
   },
   selectedDropdownItemText: {
     fontWeight: '600',
     color: '#6B46C1',
   },
   checkmark: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#6B46C1',
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   resultsInfo: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFF',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#F5F5F5',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   resultsText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 12,
+    color: '#888',
     fontWeight: '500',
   },
+  clearFilterText: {
+    fontSize: 12,
+    color: '#6B46C1',
+    fontWeight: '600',
+  },
+
   menuList: {
-    padding: 12,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingBottom: 30,
   },
   row: {
     justifyContent: 'space-between',
+    marginBottom: 12,
   },
   menuCard: {
-    width: (width - 36) / 2,
-    marginBottom: 12,
+    width: CARD_WIDTH,
     backgroundColor: '#FFF',
     borderRadius: 16,
     overflow: 'hidden',
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.09,
+    shadowRadius: 6,
+  },
+  imageWrapper: {
+    position: 'relative',
   },
   foodImage: {
     width: '100%',
-    height: 140,
+    height: 130,
     resizeMode: 'cover',
   },
+  availabilityBadge: {
+    position: 'absolute',
+    top: 7,
+    right: 7,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  availabilityText: {
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
   cardContent: {
-    padding: 12,
+    padding: 11,
   },
   itemName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#333',
-    marginBottom: 4,
+    color: '#1A1A1A',
+    marginBottom: 3,
   },
   canteenName: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 10,
-  },
-  cardFooter: {
-    flexDirection: 'column',
-    gap: 8,
+    fontSize: 11,
+    color: '#999',
+    marginBottom: 8,
   },
   price: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     color: '#6B46C1',
   },
-  availabilityBadge: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  availabilityText: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
   emptyContainer: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: 64,
+    paddingHorizontal: 24,
   },
   emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
+    fontSize: 56,
+    marginBottom: 14,
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: 13,
+    color: '#aaa',
+    textAlign: 'center',
   },
+  overlay: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: 'rgba(0,0,0,0.2)',
+  justifyContent: 'flex-start',
+},
+
+overlayDropdown: {
+  marginTop: 170, // adjust if needed
+  marginHorizontal: 14,
+  backgroundColor: '#FFF',
+  borderRadius: 14,
+  paddingVertical: 6,
+
+  elevation: 12,
+  shadowColor: '#000',
+  shadowOpacity: 0.2,
+  shadowRadius: 6,
+},
 });
 
 export default CanteenMenuScreen;

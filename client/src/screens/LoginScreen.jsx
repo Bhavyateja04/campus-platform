@@ -163,8 +163,6 @@ import {
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
-
-// ─── GRADIENT BUTTON ─────────────────────────────────────────────────────────
 const GradientButton = ({ onPress, label, loading }) => {
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -190,8 +188,6 @@ const GradientButton = ({ onPress, label, loading }) => {
     </Animated.View>
   );
 };
-
-// ─── INPUT FIELD ─────────────────────────────────────────────────────────────
 const InputField = ({
   icon, placeholder, value, onChangeText,
   secureTextEntry, keyboardType, rightIcon, onRightIconPress,
@@ -247,14 +243,11 @@ const InputField = ({
   );
 };
 
-// ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
-export default function LoginScreen({ navigation }) {
+  export default function LoginScreen({ navigation }) {
   const [email,       setEmail]       = useState('');
   const [password,    setPassword]    = useState('');
   const [showPwd,     setShowPwd]     = useState(false);
   const [loading,     setLoading]     = useState(false);
-
-  // Animations
   const fadeAnim  = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const logoScale = useRef(new Animated.Value(0.6)).current;
@@ -275,8 +268,7 @@ export default function LoginScreen({ navigation }) {
 
   const spin = logoSpin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
-  const handleLogin = () => {
-
+const handleLogin = () => {
   if (!email.trim()) {
     Alert.alert("Missing Field", "Please enter your university email.");
     return;
@@ -289,14 +281,35 @@ export default function LoginScreen({ navigation }) {
 
   setLoading(true);
 
-  setTimeout(() => {
+  fetch("http://192.168.1.7:5000/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      email: email.trim(),
+      password: password
+    })
+  })
+  .then(res => res.json())
+  .then(async data => {
     setLoading(false);
 
-    Alert.alert("Login Successful");
+    if (data.success) {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
 
-    navigation.navigate("ResetPassword");   // 👈 ADD THIS LINE
+      await AsyncStorage.setItem("token", data.token);
 
-  }, 1500);
+      navigation.navigate("ResetPassword", { email: email.trim() });
+    } else {
+      Alert.alert("Error", data.message || "Invalid credentials");
+    }
+  })
+  .catch(err => {
+    console.log(err);
+    setLoading(false);
+    Alert.alert("Error", "Network error");
+  });
 };
 
   return (
@@ -312,14 +325,9 @@ export default function LoginScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.container}>
-
-          {/* Background Orbs */}
           <View style={styles.orb1} />
           <View style={styles.orb2} />
           <View style={styles.orb3} />
-
-          {/* ── LOGO ── */}
-         {/* ── LOGO ── */}
 <Animated.View
   style={[
     styles.logoContainer,
@@ -334,8 +342,6 @@ export default function LoginScreen({ navigation }) {
     />
   </View>
 </Animated.View>
-
-          {/* ── TITLE ── */}
           <Animated.View style={[
             styles.titleBlock,
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
@@ -346,14 +352,10 @@ export default function LoginScreen({ navigation }) {
               Welcome back, please login{'\n'}to your account.
             </Text>
           </Animated.View>
-
-          {/* ── CARD ── */}
           <Animated.View style={[
             styles.card,
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}>
-
-            {/* Email */}
             <Text style={styles.fieldLabel}>University Email</Text>
             <InputField
               icon="✉️"
@@ -364,8 +366,6 @@ export default function LoginScreen({ navigation }) {
             />
 
             <View style={styles.spacer} />
-
-            {/* Password */}
             <Text style={styles.fieldLabel}>Password</Text>
             <InputField
               icon="🔒"
@@ -376,26 +376,17 @@ export default function LoginScreen({ navigation }) {
               rightIcon={showPwd ? '🙈' : '👁️'}
               onRightIconPress={() => setShowPwd(!showPwd)}
             />
-
-            {/* Forgot Password */}
             <TouchableOpacity
               style={styles.forgotRow}
-              onPress={() => navigation.navigate("ResetPassword")}
-            >
+              onPress={() => navigation.navigate("ForgotPassword")}>
               <Text style={styles.forgotText}>Forgot Password?</Text>
             </TouchableOpacity>
-
-            {/* Login Button */}
             <GradientButton onPress={handleLogin} loading={loading} />
-
-            {/* Divider */}
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>OR</Text>
               <View style={styles.dividerLine} />
             </View>
-
-            {/* SSO Button */}
             <TouchableOpacity style={styles.ssoBtn}>
               <Text style={styles.ssoBtnText}>🏛️  Sign in with University SSO</Text>
             </TouchableOpacity>
@@ -416,7 +407,7 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-// ─── STYLES ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
 
   scroll: {
@@ -433,8 +424,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     overflow: 'hidden',
   },
-
-  // ── Orbs ──
   orb1: {
     position: 'absolute',
     width: 360, height: 360,
@@ -459,8 +448,6 @@ const styles = StyleSheet.create({
     opacity: 0.04,
     top: '40%', left: '5%',
   },
-
-  // ── Logo ──
   logoContainer: {
     marginBottom: 28,
   },
@@ -489,8 +476,6 @@ const styles = StyleSheet.create({
   width: 60,
   height: 60,
 },
-
-  // ── Title ──
   titleBlock: {
     alignItems: 'center',
     marginBottom: 32,
@@ -515,8 +500,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
-
-  // ── Card ──
   card: {
     width: '100%',
     backgroundColor: '#2A0000',
@@ -531,8 +514,6 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 18,
   },
-
-  // ── Field Label ──
   fieldLabel: {
     fontSize: 11,
     fontWeight: '700',
@@ -542,8 +523,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginLeft: 2,
   },
-
-  // ── Input ──
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -577,8 +556,6 @@ const styles = StyleSheet.create({
   },
 
   spacer: { height: 16 },
-
-  // ── Forgot ──
   forgotRow: {
     alignSelf: 'flex-end',
     marginTop: 12,
@@ -590,8 +567,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.2,
   },
-
-  // ── Login Button ──
   loginBtn: {
     borderRadius: 16,
     overflow: 'hidden',
@@ -619,8 +594,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
-
-  // ── Divider ──
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -638,8 +611,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     letterSpacing: 1,
   },
-
-  // ── SSO ──
   ssoBtn: {
     borderWidth: 1.5,
     borderColor: '#5A0000',
@@ -653,8 +624,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-
-  // ── Footer ──
   footer: {
     color: '#CC6666',
     fontSize: 13,
