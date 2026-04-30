@@ -14,10 +14,24 @@ app.use(express.json());
 const userRoutes = require("./src/routes/UserRoutes");
 
 app.use("/api/users", userRoutes);
+
+
 //adminRoutes
 const adminRoutes = require("./src/routes/adminRoutes");
 
 app.use("/api/admin", adminRoutes);
+
+
+
+
+//collegeMemoriesRoutes
+const collegeMemoriesRoutes = require("./src/routes/collegeMemoriesRoutes");
+
+app.use("/api/college-memories", collegeMemoriesRoutes);
+
+//clubsRoutes
+const clubsRoutes = require("./src/routes/clubsRoutes");
+app.use("/api/clubs", clubsRoutes);
 
 const PORT = process.env.PORT || 5000;
 
