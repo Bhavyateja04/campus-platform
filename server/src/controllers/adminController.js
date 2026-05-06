@@ -70,7 +70,17 @@ const updateUser = async (req, res) => {
   });
 
 };
+// view all lost items
+const getAllLostItems = async (req, res) => {
+  const items = await LostItem.find();
+  res.json(items);
+};
 
+// view all goods
+const getAllGoods = async (req, res) => {
+  const items = await Goods.find();
+  res.json(items);
+};
 
 module.exports = {
   createUser,

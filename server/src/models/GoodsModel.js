@@ -38,6 +38,7 @@ const MarketplaceSchema = new mongoose.Schema({
 
   status: {
     type: String,
+    enum: ["available", "sold"],
     default: "available"
   },
 

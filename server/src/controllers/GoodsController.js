@@ -1,11 +1,15 @@
 const Goods = require("../models/GoodsModel");
     const createGoodsItem = async (req, res) => {
         try {
-          const item = await Goods.create(req.body);
-            res.status(201).json({
-                message: "Goods Uploaded successfully",
-                data: item
-            });
+          const item = await Goods.create({
+            ...req.body,
+            seller:req.user.id,
+            status:"available"
+          });
+          res.status(201).json({
+            message: "Goods Uploaded successfully",
+            data: item
+          });
         } catch (error) {
             console.error(error);
             res.status(500).json({
@@ -16,8 +20,18 @@ const Goods = require("../models/GoodsModel");
 const updateItem = async(req,res) =>{
     try {
         const item = await Goods.findByIdAndUpdate(req.params.id, req.body, { new: true });
-
-        res.status(200).json({
+        if (!item) {
+          return res.status(404).json({
+            message: "Item not found"
+          });
+        }
+        if(item.seller.toString() !== req.user.id){
+          return res.status(403).json({
+            message: "Unauthorized to update this item"
+          });
+        }         Object.assign(item, req.body);
+        await item.save();
+        res.json({
           message: "Goods item updated successfully",
           data: item
         });
@@ -30,7 +44,7 @@ const updateItem = async(req,res) =>{
     };
     const viewItems= async(req,res) =>{
         try{
-            const items =await Goods.find();
+            const items =await Goods.find().populate("seller", "name email");
             res.status(200).json({
                 message:"Items retrieved successfully",
                 data:items
@@ -44,8 +58,19 @@ const updateItem = async(req,res) =>{
     }
     const deleteItem = async(req,res) =>{
         try {
-            await Goods.findByIdAndDelete(req.params.id);
-            res.status(200).json({
+            const item=await Goods.findByIdAndDelete(req.params.id);
+            if (!item) {
+                return res.status(404).json({
+                    message: "Goods item not found"
+                });
+            }
+            if(item.seller.toString() !== req.user.id){
+                return res.status(403).json({
+                    message: "Unauthorized to delete this item"
+                });
+            }
+            await item.deleteOne();
+            res.json({
                 message: "Goods item deleted successfully"
             });
         } catch (error) {
@@ -55,4 +80,27 @@ const updateItem = async(req,res) =>{
             });
         }
     };
-module.exports = { createGoodsItem, updateItem, viewItems, deleteItem };
+    const markAsSold = async (req, res) => {
+  try {
+    const item = await Goods.findById(req.params.id);
+
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    if (item.seller.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    item.status = "sold";
+    await item.save();
+
+    res.json({
+      message: "Item marked as sold"
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+module.exports = { createGoodsItem, updateItem, viewItems, deleteItem, markAsSold };
