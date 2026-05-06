@@ -38,5 +38,4 @@ const PlacementSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model("Canteen", CanteenSchema);
-//aray of objetcs for content and given by and given details
+module.exports = mongoose.model("Placement", PlacementSchema);
