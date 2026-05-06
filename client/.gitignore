@@ -1,0 +1,41 @@
+# Node modules
+node_modules/
+
+# Expo
+.expo/
+.expo-shared/
+
+# Build / output
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Android / iOS
+android/
+ios/
+
+# VS Code
+.vscode/
+
+# Metro cache
+.metro-cache/
+
+# Temporary files
+*.tmp
+*.log
+
+# Assets (optional - remove if you want images in git)
+# assets/

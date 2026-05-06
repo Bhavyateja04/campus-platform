@@ -22,6 +22,12 @@ const CanteenSchema = new mongoose.Schema({
     type: String
   },
 
+  foodItems: [
+    {
+      type: String
+    }
+  ],
+
   createdAt: {
     type: Date,
     default: Date.now

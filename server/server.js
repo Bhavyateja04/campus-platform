@@ -17,6 +17,8 @@ app.use("/api/auth", authRoutes);
 const userRoutes = require("./src/routes/UserRoutes");
 
 app.use("/api/users", userRoutes);
+
+
 //adminRoutes
 const adminRoutes = require("./src/routes/adminRoutes");
 
@@ -29,6 +31,18 @@ app.use("/api/lostitems", lostRoutes);
 const goodsRoutes = require("./src/routes/GoodsRoutes");
 
 app.use("/api/goods",goodsRoutes);
+
+
+
+//collegeMemoriesRoutes
+const collegeMemoriesRoutes = require("./src/routes/collegeMemoriesRoutes");
+
+app.use("/api/college-memories", collegeMemoriesRoutes);
+
+//clubsRoutes
+const clubsRoutes = require("./src/routes/clubsRoutes");
+app.use("/api/clubs", clubsRoutes);
+
 const PORT = process.env.PORT || 5000;
 //placement routes
 const placementRoutes = require("./src/routes/placementRoutes");

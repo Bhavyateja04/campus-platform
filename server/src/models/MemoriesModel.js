@@ -4,12 +4,12 @@ const MemoriesSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    content: {
+    description: {
         type: String,
         required: true
     },
 
-    imageurl:{
+    imageUrl:{
         type: String
     },
 

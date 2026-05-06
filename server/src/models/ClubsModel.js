@@ -16,7 +16,7 @@ const ClubSchema = new mongoose.Schema({
     type:String,
     required:true
   },
-  MobileNumber:{
+  mobileNumber:{
     type:String,
     required:true
   },
