@@ -40,6 +40,25 @@ const productSchema = new mongoose.Schema(
       similarProducts: { type: [String], default: [] },
       cachedAt: { type: Date, default: null },
     },
+    // AI-based Category Validation Fields
+    isValidated: {
+      type: Boolean,
+      default: false,
+      index: true, // Index for quick filtering of validated/unvalidated products
+    },
+    validationDetails: {
+      validated: { type: Boolean, default: false },
+      detectedObjects: [
+        {
+          class: String,
+          confidence: Number,
+        },
+      ],
+      matchedObjects: [String],
+      validationMessage: String,
+      validationTimestamp: { type: Date, default: null },
+      categoryAllowedObjects: [String],
+    },
   },
   {
     timestamps: true,

@@ -8,6 +8,12 @@ const {
   generateInventorySummary,
   generateBatchSummary,
 } = require("./localSummaryService");
+const {
+  validateProductImage,
+  validateCategory,
+  getAvailableCategories,
+  CONFIDENCE_THRESHOLD,
+} = require("./utils/categoryValidation");
 
 const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour cache
 
@@ -57,15 +63,318 @@ const getProductById = async (req, res) => {
 
 /**
  * POST /api/products
- * Add a new product
+ * Add a new product with STRICT AI-based image validation
+ * 
+ * Validation Pipeline:
+ * ├─ 1️⃣ IMAGE QUALITY CHECK
+ * │   ├─ Detect if image is blurry
+ * │   ├─ Verify detection confidence (≥70%)
+ * │   └─ Ensure objects are detected
+ * ├─ 2️⃣ CONTENT FILTERING
+ * │   ├─ Reject animals, nature, food items
+ * │   ├─ Reject selfies and personal photos
+ * │   └─ Block non-college level objects
+ * └─ 3️⃣ CATEGORY VALIDATION
+ *     ├─ Match detected objects to category
+ *     └─ Ensure at least 1 object matches
+ * 
+ * Request body:
+ * {
+ *   "name": "Product Name",
+ *   "sku": "SKU-001",
+ *   "category": "Electronics",
+ *   "description": "Optional description",
+ *   "imageUrl": "https://example.com/image.jpg"
+ * }
+ * 
+ * Success Response (201):
+ * {
+ *   "success": true,
+ *   "message": "Product validated and stored successfully",
+ *   "product": { ... }
+ * }
+ * 
+ * Failure Response (400/500):
+ * {
+ *   "success": false,
+ *   "message": "Reason for rejection",
+ *   "stage": "QUALITY|CONTENT|CATEGORY",
+ *   "details": { ... }
+ * }
  */
 const createProduct = async (req, res) => {
   try {
-    const product = new Product(req.body);
+    const { name, sku, category, description, imageUrl, imageBase64, metadata } =
+      req.body;
+
+    // ─────────────────────────────────────────────────────────────────────
+    // INPUT VALIDATION
+    // ─────────────────────────────────────────────────────────────────────
+    if (!name || !category || !imageUrl) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: name, category, imageUrl",
+        supportedCategories: getAvailableCategories(),
+      });
+    }
+
+    console.log(
+      `\n${"=".repeat(70)}\n📦 NEW PRODUCT CREATION REQUEST\n${"=".repeat(70)}`
+    );
+    console.log(`  Product: "${name}"`);
+    console.log(`  Category: "${category}"`);
+    console.log(`  Image: ${imageUrl.substring(0, 60)}...`);
+
+    // ─────────────────────────────────────────────────────────────────────
+    // ROBOFLOW DETECTION
+    // ─────────────────────────────────────────────────────────────────────
+    console.log(`\n🔍 STEP 1: Detecting objects in image...`);
+    const detectionResult = await detectObjects(imageUrl);
+
+    if (!detectionResult.success) {
+      console.error(`❌ Detection failed: ${detectionResult.error}`);
+      return res.status(500).json({
+        success: false,
+        message: "Image detection failed. Ensure the image URL is valid and accessible.",
+        error: detectionResult.error,
+        stage: "ROBOFLOW_DETECTION",
+      });
+    }
+
+    const predictions = detectionResult.predictions || [];
+    console.log(
+      `✓ Detected ${predictions.length} object(s): ${
+        predictions.length > 0
+          ? predictions
+              .map(
+                (p) =>
+                  `${p.class} (${(p.confidence * 100).toFixed(1)}% confidence)`
+              )
+              .join(", ")
+          : "none"
+      }`
+    );
+
+    // ─────────────────────────────────────────────────────────────────────
+    // COMPLETE IMAGE VALIDATION PIPELINE
+    // ─────────────────────────────────────────────────────────────────────
+    console.log(`\n✅ STEP 2: Running complete validation pipeline...`);
+    const fullValidation = validateProductImage(category, predictions);
+
+    // Handle validation failure
+    if (!fullValidation.success) {
+      console.error(
+        `\n❌ VALIDATION FAILED at stage: ${fullValidation.stage}`
+      );
+      console.error(`   Reason: ${fullValidation.reason}`);
+      console.error(
+        `   Message: ${fullValidation.message}`
+      );
+
+      return res.status(400).json({
+        success: false,
+        message: fullValidation.message,
+        reason: fullValidation.reason,
+        stage: fullValidation.stage,
+        validationDetails: fullValidation.details,
+        supportedCategories: getAvailableCategories(),
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // VALIDATION PASSED: CREATE & SAVE PRODUCT
+    // ─────────────────────────────────────────────────────────────────────
+    console.log(`\n✅ VALIDATION PASSED! Creating product document...`);
+    const product = new Product({
+      name: name.trim(),
+      sku: sku ? sku.trim() : undefined,
+      category: category.trim(),
+      description: description ? description.trim() : undefined,
+      imageUrl,
+      imageBase64: imageBase64 || undefined,
+      metadata: metadata || {},
+      isValidated: true,
+      validationDetails: {
+        validated: true,
+        detectedObjects: fullValidation.data.detectedObjects,
+        matchedObjects: fullValidation.data.matchedObjects,
+        validationMessage: fullValidation.message,
+        validationTimestamp: new Date(),
+        categoryAllowedObjects: getAvailableCategories(),
+      },
+    });
+
+    // Save to MongoDB
     await product.save();
-    res.status(201).json({ success: true, product });
+    console.log(`✅ Product saved successfully to MongoDB!`);
+    console.log(`   Product ID: ${product._id}`);
+    console.log(`   Matched Objects: ${fullValidation.data.matchedObjects.join(", ")}`);
+    console.log(
+      `\n${"=".repeat(70)}\n✅ PRODUCT CREATION SUCCESSFUL\n${"=".repeat(
+        70
+      )}\n`
+    );
+
+    // Return success response
+    res.status(201).json({
+      success: true,
+      message: "✓ Product validated and stored successfully",
+      product: {
+        _id: product._id,
+        name: product.name,
+        sku: product.sku,
+        category: product.category,
+        description: product.description,
+        imageUrl: product.imageUrl,
+        metadata: product.metadata,
+        isValidated: product.isValidated,
+        createdAt: product.createdAt,
+      },
+      validation: {
+        stage: "COMPLETE",
+        message: fullValidation.message,
+        detectedObjects: fullValidation.data.detectedObjects,
+        matchedObjects: fullValidation.data.matchedObjects,
+        confidence: fullValidation.data.confidence,
+      },
+    });
   } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
+    console.error(`\n❌ FATAL ERROR: ${error.message}`);
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during product creation",
+      error: error.message,
+      stage: "SERVER_ERROR",
+    });
+  }
+};
+
+/**
+ * GET /api/categories
+ * Get all available product categories for validation
+ * Useful for frontend dropdown/selection UI
+ */
+const getCategories = async (req, res) => {
+  try {
+    const categories = getAvailableCategories();
+    res.json({
+      success: true,
+      message: "Available product categories",
+      categories,
+      count: categories.length,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch categories",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * GET /api/categories/:category
+ * Get allowed objects for a specific category
+ */
+const getCategoryDetails = async (req, res) => {
+  try {
+    const { category } = req.params;
+    const {
+      validateCategory: validateCat,
+      getAllowedObjectsForCategory,
+    } = require("./utils/categoryValidation");
+
+    const allowedObjects = getAllowedObjectsForCategory(category);
+
+    if (!allowedObjects || allowedObjects.length === 0) {
+      const availableCategories = getAvailableCategories();
+      return res.status(404).json({
+        success: false,
+        message: `Category "${category}" not found`,
+        availableCategories,
+      });
+    }
+
+    res.json({
+      success: true,
+      category,
+      allowedObjects,
+      count: allowedObjects.length,
+      confidenceThreshold: CONFIDENCE_THRESHOLD,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch category details",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * GET /api/products/validated/list
+ * Get all validated products
+ */
+const getValidatedProducts = async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+
+    const products = await Product.find({ isValidated: true })
+      .select("-imageBase64")
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await Product.countDocuments({ isValidated: true });
+
+    res.json({
+      success: true,
+      message: "Validated products",
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch validated products",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * GET /api/products/unvalidated/list
+ * Get all unvalidated products (rejected during creation)
+ */
+const getUnvalidatedProducts = async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+
+    const products = await Product.find({ isValidated: false })
+      .select("-imageBase64")
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await Product.countDocuments({ isValidated: false });
+
+    res.json({
+      success: true,
+      message: "Unvalidated products",
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch unvalidated products",
+      error: error.message,
+    });
   }
 };
 
@@ -253,6 +562,10 @@ module.exports = {
   getAllProducts,
   getProductById,
   createProduct,
+  getCategories,
+  getCategoryDetails,
+  getValidatedProducts,
+  getUnvalidatedProducts,
   analyzeProduct,
   batchAnalyze,
   analyzeAll,

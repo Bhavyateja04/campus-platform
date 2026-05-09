@@ -300,11 +300,11 @@ Backend/
 curl -X POST http://localhost:5000/api/products \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Office Chair",
-    "sku": "OC-001",
-    "category": "Furniture",
-    "imageUrl": "https://example.com/chair.jpg",
-    "metadata": { "price": 199.99, "stock": 25 }
+    "name": "Wireless Keyboard",
+    "sku": "KB-001",
+    "category": "Electronics",
+    "imageUrl": "https://example.com/keyboard.jpg",
+    "metadata": { "price": 89.99, "stock": 25 }
   }'
 ```
 
