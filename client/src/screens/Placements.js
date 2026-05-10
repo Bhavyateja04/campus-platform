@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   StatusBar, Dimensions, Animated, Easing, Platform,
-  TextInput, Modal, TouchableWithoutFeedback, FlatList,
+  TextInput, Modal, TouchableWithoutFeedback, Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,7 +34,6 @@ const C = {
 
 const EASE = Easing.bezier(0.22, 1, 0.36, 1);
 
-// ─── ENTRANCE ANIMATION ───────────────────────────────────────────────────────
 const useEntrance = (delay = 0, dy = 20) => {
   const opacity    = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(dy)).current;
@@ -49,225 +48,75 @@ const useEntrance = (delay = 0, dy = 20) => {
 
 // ─── COMPANIES DATA ───────────────────────────────────────────────────────────
 const COMPANIES = [
-  {
-    id: 'tcs',       name: 'TCS',         category: 'IT Services',        tag: 'Mass Recruiter',
-    emoji: '🔵',    logoBg: '#EFF6FF',   logoColor: '#2563EB',
-    tagBg: '#DBEAFE', tagColor: '#1E40AF',
-    rating: 4.1,    reviewCount: 312,
-    grad: ['#1E3A8A', '#2563EB'],
-  },
-  {
-    id: 'infosys',   name: 'Infosys',     category: 'IT Consulting',      tag: 'Top Recruiter',
-    emoji: '🟢',    logoBg: '#ECFDF5',   logoColor: '#059669',
-    tagBg: '#D1FAE5', tagColor: '#065F46',
-    rating: 4.0,    reviewCount: 287,
-    grad: ['#064E3B', '#059669'],
-  },
-  {
-    id: 'wipro',     name: 'Wipro',       category: 'IT Services',        tag: 'Campus Drive',
-    emoji: '🟡',    logoBg: '#FFFBEB',   logoColor: '#D97706',
-    tagBg: '#FEF3C7', tagColor: '#92400E',
-    rating: 3.9,    reviewCount: 198,
-    grad: ['#78350F', '#D97706'],
-  },
-  {
-    id: 'accenture', name: 'Accenture',   category: 'Consulting',         tag: 'Dream Company',
-    emoji: '🟣',    logoBg: '#F5F3FF',   logoColor: '#7C3AED',
-    tagBg: '#EDE9FE', tagColor: '#5B21B6',
-    rating: 4.3,    reviewCount: 241,
-    grad: ['#4C1D95', '#7C3AED'],
-  },
-  {
-    id: 'amazon',    name: 'Amazon',      category: 'E-Commerce / Cloud', tag: 'FAANG',
-    emoji: '🛒',    logoBg: '#FFFBEB',   logoColor: '#F59E0B',
-    tagBg: '#FEF3C7', tagColor: '#92400E',
-    rating: 4.6,    reviewCount: 89,
-    grad: ['#92400E', '#F59E0B'],
-  },
-  {
-    id: 'google',    name: 'Google',      category: 'Big Tech',           tag: 'FAANG',
-    emoji: '🔴',    logoBg: '#FEF2F2',   logoColor: '#DC2626',
-    tagBg: '#FEE2E2', tagColor: '#991B1B',
-    rating: 4.8,    reviewCount: 67,
-    grad: ['#7F1D1D', '#DC2626'],
-  },
-  {
-    id: 'microsoft', name: 'Microsoft',   category: 'Big Tech',           tag: 'Dream Company',
-    emoji: '🪟',    logoBg: '#EFF6FF',   logoColor: '#2563EB',
-    tagBg: '#DBEAFE', tagColor: '#1E40AF',
-    rating: 4.7,    reviewCount: 74,
-    grad: ['#1E3A8A', '#3B82F6'],
-  },
-  {
-    id: 'capgemini', name: 'Capgemini',   category: 'IT Consulting',      tag: 'Mass Recruiter',
-    emoji: '🔷',    logoBg: '#EFF6FF',   logoColor: '#1D4ED8',
-    tagBg: '#DBEAFE', tagColor: '#1E40AF',
-    rating: 3.8,    reviewCount: 176,
-    grad: ['#1E3A8A', '#1D4ED8'],
-  },
-  {
-    id: 'cognizant', name: 'Cognizant',   category: 'IT Services',        tag: 'Campus Drive',
-    emoji: '🔵',    logoBg: '#EFF6FF',   logoColor: '#0284C7',
-    tagBg: '#E0F2FE', tagColor: '#075985',
-    rating: 3.9,    reviewCount: 203,
-    grad: ['#0C4A6E', '#0284C7'],
-  },
-  {
-    id: 'hcl',       name: 'HCL Tech',    category: 'IT Services',        tag: 'Mass Recruiter',
-    emoji: '🟢',    logoBg: '#ECFDF5',   logoColor: '#16A34A',
-    tagBg: '#DCFCE7', tagColor: '#14532D',
-    rating: 3.7,    reviewCount: 154,
-    grad: ['#14532D', '#16A34A'],
-  },
-  {
-    id: 'deloitte',  name: 'Deloitte',    category: 'Big 4 Consulting',   tag: 'Dream Company',
-    emoji: '🟢',    logoBg: '#ECFDF5',   logoColor: '#059669',
-    tagBg: '#D1FAE5', tagColor: '#065F46',
-    rating: 4.4,    reviewCount: 112,
-    grad: ['#064E3B', '#10B981'],
-  },
-  {
-    id: 'oracle',    name: 'Oracle',      category: 'Enterprise Tech',    tag: 'Product',
-    emoji: '🔴',    logoBg: '#FEF2F2',   logoColor: '#DC2626',
-    tagBg: '#FEE2E2', tagColor: '#991B1B',
-    rating: 4.2,    reviewCount: 98,
-    grad: ['#991B1B', '#EF4444'],
-  },
+  { id:'tcs',       name:'TCS',        category:'IT Services',        tag:'Mass Recruiter', emoji:'🔵', logoBg:'#EFF6FF', logoColor:'#2563EB', tagBg:'#DBEAFE', tagColor:'#1E40AF', rating:4.1, reviewCount:312, grad:['#1E3A8A','#2563EB'] },
+  { id:'infosys',   name:'Infosys',    category:'IT Consulting',      tag:'Top Recruiter',  emoji:'🟢', logoBg:'#ECFDF5', logoColor:'#059669', tagBg:'#D1FAE5', tagColor:'#065F46', rating:4.0, reviewCount:287, grad:['#064E3B','#059669'] },
+  { id:'wipro',     name:'Wipro',      category:'IT Services',        tag:'Campus Drive',   emoji:'🟡', logoBg:'#FFFBEB', logoColor:'#D97706', tagBg:'#FEF3C7', tagColor:'#92400E', rating:3.9, reviewCount:198, grad:['#78350F','#D97706'] },
+  { id:'accenture', name:'Accenture',  category:'Consulting',         tag:'Dream Company',  emoji:'🟣', logoBg:'#F5F3FF', logoColor:'#7C3AED', tagBg:'#EDE9FE', tagColor:'#5B21B6', rating:4.3, reviewCount:241, grad:['#4C1D95','#7C3AED'] },
+  { id:'amazon',    name:'Amazon',     category:'E-Commerce / Cloud', tag:'FAANG',          emoji:'🛒', logoBg:'#FFFBEB', logoColor:'#F59E0B', tagBg:'#FEF3C7', tagColor:'#92400E', rating:4.6, reviewCount:89,  grad:['#92400E','#F59E0B'] },
+  { id:'google',    name:'Google',     category:'Big Tech',           tag:'FAANG',          emoji:'🔴', logoBg:'#FEF2F2', logoColor:'#DC2626', tagBg:'#FEE2E2', tagColor:'#991B1B', rating:4.8, reviewCount:67,  grad:['#7F1D1D','#DC2626'] },
+  { id:'microsoft', name:'Microsoft',  category:'Big Tech',           tag:'Dream Company',  emoji:'🪟', logoBg:'#EFF6FF', logoColor:'#2563EB', tagBg:'#DBEAFE', tagColor:'#1E40AF', rating:4.7, reviewCount:74,  grad:['#1E3A8A','#3B82F6'] },
+  { id:'capgemini', name:'Capgemini',  category:'IT Consulting',      tag:'Mass Recruiter', emoji:'🔷', logoBg:'#EFF6FF', logoColor:'#1D4ED8', tagBg:'#DBEAFE', tagColor:'#1E40AF', rating:3.8, reviewCount:176, grad:['#1E3A8A','#1D4ED8'] },
+  { id:'cognizant', name:'Cognizant',  category:'IT Services',        tag:'Campus Drive',   emoji:'🔵', logoBg:'#EFF6FF', logoColor:'#0284C7', tagBg:'#E0F2FE', tagColor:'#075985', rating:3.9, reviewCount:203, grad:['#0C4A6E','#0284C7'] },
+  { id:'hcl',       name:'HCL Tech',   category:'IT Services',        tag:'Mass Recruiter', emoji:'🟢', logoBg:'#ECFDF5', logoColor:'#16A34A', tagBg:'#DCFCE7', tagColor:'#14532D', rating:3.7, reviewCount:154, grad:['#14532D','#16A34A'] },
+  { id:'deloitte',  name:'Deloitte',   category:'Big 4 Consulting',   tag:'Dream Company',  emoji:'🟢', logoBg:'#ECFDF5', logoColor:'#059669', tagBg:'#D1FAE5', tagColor:'#065F46', rating:4.4, reviewCount:112, grad:['#064E3B','#10B981'] },
+  { id:'oracle',    name:'Oracle',     category:'Enterprise Tech',    tag:'Product',        emoji:'🔴', logoBg:'#FEF2F2', logoColor:'#DC2626', tagBg:'#FEE2E2', tagColor:'#991B1B', rating:4.2, reviewCount:98,  grad:['#991B1B','#EF4444'] },
 ];
 
-// ─── EXPERIENCES DATA ─────────────────────────────────────────────────────────
 const EXPERIENCES = {
   tcs: [
-    { id:'t1', name:'Ravi Teja',    initials:'RT', role:'SDE — TCS NQT 2024',  date:'Dec 2024',
-      avatarBg:'#EFF6FF', avatarColor:'#2563EB',
-      difficulty:'Medium', diffBg:'#FEF3C7', diffColor:'#92400E',
-      experience:'The TCS NQT consisted of 3 rounds: Cognitive, Programming, and HR. The cognitive section was time-bound and covered verbal, numerical, and logical reasoning. The programming section had two coding questions — one easy (array manipulation) and one medium (string pattern). HR was very relaxed. Overall, good preparation for 3–4 weeks is sufficient.',
-      tips:'Focus on TCS NQT model papers. Practice aptitude from IndiaBix. For coding, revise arrays, strings, and basic patterns. The HR usually asks about projects, strengths, and "why TCS".' },
-    { id:'t2', name:'Priya Sharma', initials:'PS', role:'Digital — TCS 2024',  date:'Nov 2024',
-      avatarBg:'#F5F3FF', avatarColor:'#7C3AED',
-      difficulty:'Easy', diffBg:'#D1FAE5', diffColor:'#065F46',
-      experience:'I appeared for TCS Digital. It included an advanced coding round with 2 problems — one on dynamic programming and one on graphs. Then a technical interview focusing on DSA, OOPs, DBMS, and OS. The interviewer was friendly and guided when I was stuck. Final HR was straightforward.',
-      tips:'For TCS Digital, strengthen DSA especially DP and graphs. Know DBMS queries and normalization well. Revise OOPs concepts with examples from your project.' },
-    { id:'t3', name:'Sai Kiran',    initials:'SK', role:'SDE — TCS NQT 2023',  date:'Oct 2023',
-      avatarBg:'#ECFDF5', avatarColor:'#059669',
-      difficulty:'Medium', diffBg:'#FEF3C7', diffColor:'#92400E',
-      experience:'Attended the off-campus TCS drive. Written test was easy if you practice well. The technical interview asked basic C/Java questions, one SQL query, and discussed my final year project in depth. Panel was professional and process was smooth.',
-      tips:'Study your project inside out. They often ask you to explain your project architecture. Basic SQL — joins, group by, having — is important.' },
+    { id:'t1', name:'Ravi Teja',    initials:'RT', role:'SDE — TCS NQT 2024',  date:'Dec 2024', avatarBg:'#EFF6FF', avatarColor:'#2563EB', difficulty:'Medium', diffBg:'#FEF3C7', diffColor:'#92400E', experience:'The TCS NQT consisted of 3 rounds: Cognitive, Programming, and HR. The cognitive section was time-bound and covered verbal, numerical, and logical reasoning. The programming section had two coding questions — one easy (array manipulation) and one medium (string pattern). HR was very relaxed. Overall, good preparation for 3–4 weeks is sufficient.', tips:'Focus on TCS NQT model papers. Practice aptitude from IndiaBix. For coding, revise arrays, strings, and basic patterns. The HR usually asks about projects, strengths, and "why TCS".' },
+    { id:'t2', name:'Priya Sharma', initials:'PS', role:'Digital — TCS 2024',  date:'Nov 2024', avatarBg:'#F5F3FF', avatarColor:'#7C3AED', difficulty:'Easy',   diffBg:'#D1FAE5', diffColor:'#065F46', experience:'I appeared for TCS Digital. It included an advanced coding round with 2 problems — one on dynamic programming and one on graphs. Then a technical interview focusing on DSA, OOPs, DBMS, and OS. The interviewer was friendly and guided when I was stuck. Final HR was straightforward.', tips:'For TCS Digital, strengthen DSA especially DP and graphs. Know DBMS queries and normalization well. Revise OOPs concepts with examples from your project.' },
   ],
   infosys: [
-    { id:'i1', name:'Sneha Reddy',  initials:'SR', role:'Systems Engineer 2024',  date:'Jan 2025',
-      avatarBg:'#ECFDF5', avatarColor:'#059669',
-      difficulty:'Easy', diffBg:'#D1FAE5', diffColor:'#065F46',
-      experience:'Infosys Instep recruitment was smooth. Online test had verbal ability, reasoning, and a pseudocode section. No hardcore coding. Technical interview covered basic concepts — OOPS, data types, difference between C and C++. Panel was very welcoming and the process moved fast.',
-      tips:'Revise basic programming concepts. OOPs fundamentals are key. Practice pseudocode questions — they are unique to Infosys and need practice. Verbal section needs grammar and comprehension preparation.' },
-    { id:'i2', name:'Arjun Mehta',  initials:'AM', role:'Power Programmer 2024',  date:'Feb 2025',
-      avatarBg:'#EFF6FF', avatarColor:'#2563EB',
-      difficulty:'Hard', diffBg:'#FEE2E2', diffColor:'#991B1B',
-      experience:'The Infosys Power Programmer track was notably harder. Online test had a complex DSA round with 3 problems. Technical interview went deep into algorithms, time complexity analysis, and live coding. They asked me to optimise solutions on the spot.',
-      tips:'For Power Programmer, treat it like a FAANG-lite interview. Practice LeetCode medium/hard. Know Big O analysis by heart. System design basics also help.' },
+    { id:'i1', name:'Sneha Reddy',  initials:'SR', role:'Systems Engineer 2024', date:'Jan 2025', avatarBg:'#ECFDF5', avatarColor:'#059669', difficulty:'Easy', diffBg:'#D1FAE5', diffColor:'#065F46', experience:'Infosys Instep recruitment was smooth. Online test had verbal ability, reasoning, and a pseudocode section. No hardcore coding. Technical interview covered basic concepts — OOPS, data types, difference between C and C++. Panel was very welcoming and the process moved fast.', tips:'Revise basic programming concepts. OOPs fundamentals are key. Practice pseudocode questions — they are unique to Infosys and need practice.' },
   ],
   wipro: [
-    { id:'w1', name:'Divya Rao',    initials:'DR', role:'Project Engineer 2024',  date:'Dec 2024',
-      avatarBg:'#FFFBEB', avatarColor:'#D97706',
-      difficulty:'Easy', diffBg:'#D1FAE5', diffColor:'#065F46',
-      experience:'Wipro NLTH (National Level Talent Hunt) consisted of an online test and two interviews. The online test covered verbal, aptitude, and a basic coding section. Technical interview asked basic C++ questions and about my internship project. Very chill process overall.',
-      tips:'Practice basic aptitude and verbal. The coding section has easy problems — arrays, strings, basic loops. Know at least one programming language well — syntax, functions, pointers/references.' },
+    { id:'w1', name:'Divya Rao', initials:'DR', role:'Project Engineer 2024', date:'Dec 2024', avatarBg:'#FFFBEB', avatarColor:'#D97706', difficulty:'Easy', diffBg:'#D1FAE5', diffColor:'#065F46', experience:'Wipro NLTH consisted of an online test and two interviews. The online test covered verbal, aptitude, and a basic coding section. Technical interview asked basic C++ questions and about my internship project. Very chill process overall.', tips:'Practice basic aptitude and verbal. The coding section has easy problems — arrays, strings, basic loops. Know at least one programming language well.' },
   ],
   accenture: [
-    { id:'a1', name:'Kavya Nair',   initials:'KN', role:'Associate SE 2024',      date:'Mar 2025',
-      avatarBg:'#F5F3FF', avatarColor:'#7C3AED',
-      difficulty:'Medium', diffBg:'#FEF3C7', diffColor:'#92400E',
-      experience:'Accenture campus process had 3 rounds: Cognitive + Technical Assessment, Communication Assessment, and HR interview. The cognitive section was standard. Technical assessment covered basic programming, DBMS, and networking. The communication round tested English fluency with situational questions. HR was conversational.',
-      tips:'The communication round is eliminative — practise speaking English fluently and clearly. For technical, focus on DBMS (SQL queries), networking basics (TCP/IP, DNS), and SDLC.' },
+    { id:'a1', name:'Kavya Nair', initials:'KN', role:'Associate SE 2024', date:'Mar 2025', avatarBg:'#F5F3FF', avatarColor:'#7C3AED', difficulty:'Medium', diffBg:'#FEF3C7', diffColor:'#92400E', experience:'Accenture campus process had 3 rounds: Cognitive + Technical Assessment, Communication Assessment, and HR interview. The cognitive section was standard. Technical assessment covered basic programming, DBMS, and networking. The communication round tested English fluency. HR was conversational.', tips:'The communication round is eliminative — practise speaking English fluently and clearly. For technical, focus on DBMS (SQL queries), networking basics (TCP/IP, DNS), and SDLC.' },
   ],
   amazon: [
-    { id:'am1', name:'Sai Varma',   initials:'SV', role:'SDE Intern 2024',        date:'Aug 2024',
-      avatarBg:'#FFFBEB', avatarColor:'#F59E0B',
-      difficulty:'Hard', diffBg:'#FEE2E2', diffColor:'#991B1B',
-      experience:'Amazon SDE internship interview had 2 online assessment rounds and 2 virtual interviews. OA had DSA problems — medium/hard LeetCode level. Virtual interviews included LP (Leadership Principle) questions and live coding. Every answer has to tie back to an Amazon LP. They really care about ownership and customer obsession.',
-      tips:'Prepare at least 3 STAR stories per LP — memorise all 16 Leadership Principles. DSA-wise, focus on trees, graphs, sliding window, and DP. Articulate your thought process before coding.' },
-    { id:'am2', name:'Pooja Reddy', initials:'PR', role:'SDE-1 2024',             date:'Dec 2024',
-      avatarBg:'#FEF2F2', avatarColor:'#DC2626',
-      difficulty:'Hard', diffBg:'#FEE2E2', diffColor:'#991B1B',
-      experience:'Full-time SDE-1 process. Bar raiser round was the toughest — they probe every single LP answer with "tell me more". Coding was 2 medium-hard problems per round. System design was basic (URL shortener, LRU cache). The bar raiser round is the real filter.',
-      tips:'Never pad your LP answers. Be specific with numbers and impact. For system design at entry level, know LRU cache, design patterns, REST API design. Practice till answers flow naturally.' },
+    { id:'am1', name:'Sai Varma', initials:'SV', role:'SDE Intern 2024', date:'Aug 2024', avatarBg:'#FFFBEB', avatarColor:'#F59E0B', difficulty:'Hard', diffBg:'#FEE2E2', diffColor:'#991B1B', experience:'Amazon SDE internship interview had 2 online assessment rounds and 2 virtual interviews. OA had DSA problems — medium/hard LeetCode level. Virtual interviews included LP (Leadership Principle) questions and live coding. Every answer has to tie back to an Amazon LP.', tips:'Prepare at least 3 STAR stories per LP — memorise all 16 Leadership Principles. DSA-wise, focus on trees, graphs, sliding window, and DP. Articulate your thought process before coding.' },
   ],
   google: [
-    { id:'g1', name:'Nikhil Verma', initials:'NV', role:'SWE Intern 2024',        date:'Sep 2024',
-      avatarBg:'#FEF2F2', avatarColor:'#DC2626',
-      difficulty:'Hard', diffBg:'#FEE2E2', diffColor:'#991B1B',
-      experience:'Google intern process: phone screen + 2 virtual interviews. Problems were all medium-hard — graph traversal, segment trees, and a tricky DP problem. Interviewers are very collaborative and give hints. Communication matters more than getting the right answer on first try. Clean, optimal code is expected.',
-      tips:'Grind LeetCode — at least 200 problems, mostly medium. Know time/space complexity by heart. Practice on Google Docs (no IDE hints). Talk through every step before writing code.' },
-    { id:'g2', name:'Aakash Singh', initials:'AS', role:'SWE L3 2023',            date:'Jul 2023',
-      avatarBg:'#EFF6FF', avatarColor:'#2563EB',
-      difficulty:'Hard', diffBg:'#FEE2E2', diffColor:'#991B1B',
-      experience:'Full loop: 5 rounds — 4 coding + 1 Googleyness. Problems ranged from array manipulation to system design (basic). Googleyness round tests your values — they want collaborative, humble, and impact-driven people. Entire process took 3 months.',
-      tips:'Prepare 6 months in advance. Neetcode roadmap is perfect for Google prep. For Googleyness, reflect on past teamwork experiences. Never bad-mouth previous managers or teammates.' },
+    { id:'g1', name:'Nikhil Verma', initials:'NV', role:'SWE Intern 2024', date:'Sep 2024', avatarBg:'#FEF2F2', avatarColor:'#DC2626', difficulty:'Hard', diffBg:'#FEE2E2', diffColor:'#991B1B', experience:'Google intern process: phone screen + 2 virtual interviews. Problems were all medium-hard — graph traversal, segment trees, and a tricky DP problem. Interviewers are very collaborative and give hints. Communication matters more than getting the right answer on first try.', tips:'Grind LeetCode — at least 200 problems, mostly medium. Know time/space complexity by heart. Practice on Google Docs (no IDE hints). Talk through every step before writing code.' },
   ],
   microsoft: [
-    { id:'ms1', name:'Teja Varma',  initials:'TV', role:'SWE Intern 2024',        date:'Oct 2024',
-      avatarBg:'#EFF6FF', avatarColor:'#2563EB',
-      difficulty:'Medium', diffBg:'#FEF3C7', diffColor:'#92400E',
-      experience:'Microsoft intern interview: 2 coding rounds + 1 HR. Coding was straightforward — trees and dynamic programming. Interviewers were friendly and gave helpful hints. They care about clean code and good variable names. HR was mostly about interests, projects, and why Microsoft.',
-      tips:"Microsoft values clean, readable code. Don't sacrifice readability for cleverness. Be enthusiastic about the product/team you're interviewing for. Know Microsoft's recent products and cloud (Azure) basics." },
+    { id:'ms1', name:'Teja Varma', initials:'TV', role:'SWE Intern 2024', date:'Oct 2024', avatarBg:'#EFF6FF', avatarColor:'#2563EB', difficulty:'Medium', diffBg:'#FEF3C7', diffColor:'#92400E', experience:"Microsoft intern interview: 2 coding rounds + 1 HR. Coding was straightforward — trees and dynamic programming. Interviewers were friendly and gave helpful hints. They care about clean code and good variable names.", tips:"Microsoft values clean, readable code. Don't sacrifice readability for cleverness. Be enthusiastic about the product/team you're interviewing for." },
   ],
   capgemini: [
-    { id:'cap1', name:'Vikram Rao', initials:'VR', role:'Analyst 2024',           date:'Nov 2024',
-      avatarBg:'#EFF6FF', avatarColor:'#1D4ED8',
-      difficulty:'Easy', diffBg:'#D1FAE5', diffColor:'#065F46',
-      experience:'Capgemini process was 4 rounds: Game-based assessment, Behavioral, Technical, and HR. The game-based assessment was unique — puzzles, cognitive tests. Technical asked basic programming, data structures, and SQL. Very relaxed overall atmosphere.',
-      tips:"The game-based assessment is unique — play practice games at assessmentday.co.uk. Don't overthink it. Technical round is basic — just know sorting, searching, and SQL fundamentals." },
+    { id:'cap1', name:'Vikram Rao', initials:'VR', role:'Analyst 2024', date:'Nov 2024', avatarBg:'#EFF6FF', avatarColor:'#1D4ED8', difficulty:'Easy', diffBg:'#D1FAE5', diffColor:'#065F46', experience:'Capgemini process was 4 rounds: Game-based assessment, Behavioral, Technical, and HR. The game-based assessment was unique — puzzles, cognitive tests. Technical asked basic programming, data structures, and SQL. Very relaxed overall atmosphere.', tips:"The game-based assessment is unique — play practice games at assessmentday.co.uk. Technical round is basic — just know sorting, searching, and SQL fundamentals." },
   ],
   cognizant: [
-    { id:'co1', name:'Deepa Nair',  initials:'DN', role:'Programmer Analyst 2024', date:'Dec 2024',
-      avatarBg:'#E0F2FE', avatarColor:'#0284C7',
-      difficulty:'Medium', diffBg:'#FEF3C7', diffColor:'#92400E',
-      experience:'Cognizant GenC process included online assessment and 2 interviews. OA had aptitude and coding sections (2 easy problems). Technical interview covered basic OOPs, DBMS, and asked me to write a simple program. HR was standard. Timeline from test to offer was about 6 weeks.',
-      tips:'Prepare OOPs — inheritance, polymorphism, encapsulation with real examples. DBMS joins and transactions are commonly asked. Practice easy LeetCode to stay sharp on coding basics.' },
+    { id:'co1', name:'Deepa Nair', initials:'DN', role:'Programmer Analyst 2024', date:'Dec 2024', avatarBg:'#E0F2FE', avatarColor:'#0284C7', difficulty:'Medium', diffBg:'#FEF3C7', diffColor:'#92400E', experience:'Cognizant GenC process included online assessment and 2 interviews. OA had aptitude and coding sections (2 easy problems). Technical interview covered basic OOPs, DBMS, and asked me to write a simple program. Timeline from test to offer was about 6 weeks.', tips:'Prepare OOPs — inheritance, polymorphism, encapsulation with real examples. DBMS joins and transactions are commonly asked. Practice easy LeetCode to stay sharp on coding basics.' },
   ],
   hcl: [
-    { id:'h1', name:'Chandra Sekhar', initials:'CS', role:'Engineer — HCL 2024', date:'Oct 2024',
-      avatarBg:'#ECFDF5', avatarColor:'#16A34A',
-      difficulty:'Easy', diffBg:'#D1FAE5', diffColor:'#065F46',
-      experience:'HCL TechBee and graduate drives were both straightforward. Written test with aptitude and coding. Technical round focused on basics and my projects. HR asked about relocation and shift timings. Process was fast and transparent.',
-      tips:'Know your resume well. HCL often gives puzzles in the technical round — practice logical puzzles. Be open about flexibility in the HR round — they value that.' },
+    { id:'h1', name:'Chandra Sekhar', initials:'CS', role:'Engineer — HCL 2024', date:'Oct 2024', avatarBg:'#ECFDF5', avatarColor:'#16A34A', difficulty:'Easy', diffBg:'#D1FAE5', diffColor:'#065F46', experience:'HCL graduate drives were straightforward. Written test with aptitude and coding. Technical round focused on basics and my projects. HR asked about relocation and shift timings. Process was fast and transparent.', tips:'Know your resume well. HCL often gives puzzles in the technical round — practice logical puzzles. Be open about flexibility in the HR round.' },
   ],
   deloitte: [
-    { id:'d1', name:'Radha Krishna', initials:'RK', role:'Business Analyst 2024', date:'Feb 2025',
-      avatarBg:'#ECFDF5', avatarColor:'#059669',
-      difficulty:'Medium', diffBg:'#FEF3C7', diffColor:'#92400E',
-      experience:'Deloitte campus process: group discussion, technical interview, and HR. GD topic was "Impact of AI on jobs" — very relevant. Technical asked SQL, basic programming, and a small case study. HR was professional and asked about long-term career goals. The GD round is eliminative.',
-      tips:'Prepare for GDs by reading current affairs. For Deloitte, communication skills matter as much as technical. SQL is important — practice complex queries. Know basic financial and business concepts.' },
+    { id:'d1', name:'Radha Krishna', initials:'RK', role:'Business Analyst 2024', date:'Feb 2025', avatarBg:'#ECFDF5', avatarColor:'#059669', difficulty:'Medium', diffBg:'#FEF3C7', diffColor:'#92400E', experience:'Deloitte campus process: group discussion, technical interview, and HR. GD topic was "Impact of AI on jobs". Technical asked SQL, basic programming, and a small case study. HR was professional and asked about long-term career goals. The GD round is eliminative.', tips:'Prepare for GDs by reading current affairs. For Deloitte, communication skills matter as much as technical. SQL is important — practice complex queries.' },
   ],
   oracle: [
-    { id:'or1', name:'Pavithra S',   initials:'PS', role:'Associate Consultant 2024', date:'Mar 2025',
-      avatarBg:'#FEF2F2', avatarColor:'#DC2626',
-      difficulty:'Hard', diffBg:'#FEE2E2', diffColor:'#991B1B',
-      experience:'Oracle campus process had 4 rounds. Online test was medium-hard with DSA and database questions. Technical round 1 was pure DSA — trees and graphs. Technical round 2 went deep into DBMS, OS, and networks. HR was relaxed. Very thorough process.',
-      tips:'Oracle values strong CS fundamentals. OS concepts like scheduling, memory management, and process synchronization are asked in depth. DBMS — indexing, transactions, isolation levels. DSA practice is essential.' },
+    { id:'or1', name:'Pavithra S', initials:'PS', role:'Associate Consultant 2024', date:'Mar 2025', avatarBg:'#FEF2F2', avatarColor:'#DC2626', difficulty:'Hard', diffBg:'#FEE2E2', diffColor:'#991B1B', experience:'Oracle campus process had 4 rounds. Online test was medium-hard with DSA and database questions. Technical round 1 was pure DSA — trees and graphs. Technical round 2 went deep into DBMS, OS, and networks. HR was relaxed. Very thorough process.', tips:'Oracle values strong CS fundamentals. OS concepts like scheduling, memory management, and process synchronization are asked in depth. DBMS — indexing, transactions, isolation levels.' },
   ],
 };
 
-// ─── STAR RATING ─────────────────────────────────────────────────────────────
+// ─── STARS ────────────────────────────────────────────────────────────────────
 const Stars = ({ rating, size = 12 }) => (
   <View style={{ flexDirection:'row', gap:2 }}>
     {[1,2,3,4,5].map(i => (
-      <Ionicons key={i}
-        name={i <= Math.round(rating) ? 'star' : 'star-outline'}
-        size={size} color={C.gold}
-      />
+      <Ionicons key={i} name={i <= Math.round(rating) ? 'star' : 'star-outline'} size={size} color={C.gold} />
     ))}
   </View>
 );
 
-// ─── EXPERIENCE CARD (inside bottom sheet) ───────────────────────────────────
+// ─── EXPERIENCE CARD ──────────────────────────────────────────────────────────
 const ExperienceCard = ({ exp, index }) => {
   const [expanded, setExpanded] = useState(false);
   const anim = useEntrance(index * 80, 16);
-
   return (
     <Animated.View style={[anim, EC.card]}>
-      {/* Header */}
       <View style={EC.header}>
         <View style={[EC.avatar, { backgroundColor: exp.avatarBg }]}>
           <Text style={[EC.avatarT, { color: exp.avatarColor }]}>{exp.initials}</Text>
@@ -283,13 +132,10 @@ const ExperienceCard = ({ exp, index }) => {
           </View>
         </View>
       </View>
-
       <Text style={EC.preview} numberOfLines={expanded ? undefined : 3}>{exp.experience}</Text>
-
       <TouchableOpacity style={EC.toggle} onPress={() => setExpanded(p => !p)} activeOpacity={0.7}>
         <Text style={EC.toggleTxt}>{expanded ? 'Show less ▲' : 'Read full experience ▼'}</Text>
       </TouchableOpacity>
-
       {expanded && (
         <View style={EC.tipsBox}>
           <Text style={EC.tipsLabel}>💡  Preparation Tips</Text>
@@ -299,7 +145,6 @@ const ExperienceCard = ({ exp, index }) => {
     </Animated.View>
   );
 };
-
 const EC = StyleSheet.create({
   card:     { backgroundColor:C.surface, borderRadius:18, marginBottom:12, padding:16, borderWidth:1, borderColor:'rgba(37,99,235,0.08)', shadowColor:C.primary+'18', shadowOffset:{width:0,height:2}, shadowOpacity:1, shadowRadius:8, elevation:3 },
   header:   { flexDirection:'row', alignItems:'center', gap:12, marginBottom:10 },
@@ -319,10 +164,19 @@ const EC = StyleSheet.create({
   tipsTxt:  { fontSize:13, color:'#1E40AF', lineHeight:20 },
 });
 
-// ─── BOTTOM SHEET ─────────────────────────────────────────────────────────────
-const BottomSheet = ({ company, onClose }) => {
+// ─── UPLOAD EXPERIENCE MODAL ──────────────────────────────────────────────────
+const COMPANY_NAMES = COMPANIES.map(c => c.name);
+const DIFFICULTY_OPTIONS = ['Easy', 'Medium', 'Hard'];
+
+const UploadModal = ({ onClose }) => {
   const slideY = useRef(new Animated.Value(height)).current;
-  const exps   = EXPERIENCES[company.id] || [];
+  const [name,        setName]        = useState('');
+  const [role,        setRole]        = useState('');
+  const [company,     setCompany]     = useState('');
+  const [difficulty,  setDifficulty]  = useState('');
+  const [experience,  setExperience]  = useState('');
+  const [tips,        setTips]        = useState('');
+  const [showCompDrop, setShowCompDrop] = useState(false);
 
   useEffect(() => {
     Animated.spring(slideY, { toValue:0, speed:18, bounciness:4, useNativeDriver:true }).start();
@@ -332,15 +186,198 @@ const BottomSheet = ({ company, onClose }) => {
     Animated.timing(slideY, { toValue:height, duration:280, easing:EASE, useNativeDriver:true }).start(onClose);
   };
 
+  const handleSubmit = () => {
+    if (!name.trim() || !role.trim() || !company || !difficulty || !experience.trim()) {
+      Alert.alert('Missing Fields', 'Please fill in all required fields before submitting.');
+      return;
+    }
+    Alert.alert('✅ Submitted!', 'Your experience has been submitted for review. Thank you for helping juniors!', [
+      { text: 'OK', onPress: close }
+    ]);
+  };
+
+  return (
+    <Modal transparent animationType="none" onRequestClose={close}>
+      <TouchableWithoutFeedback onPress={close}>
+        <View style={UM.overlay} />
+      </TouchableWithoutFeedback>
+
+      <Animated.View style={[UM.sheet, { transform:[{ translateY:slideY }] }]}>
+        <View style={UM.handle} />
+
+        {/* Header */}
+        <LinearGradient colors={['#1E3A8A','#2563EB']} style={UM.modalHeader}>
+          <View>
+            <Text style={UM.modalTitle}>Share Your Experience</Text>
+            <Text style={UM.modalSub}>Help your juniors crack interviews 🎯</Text>
+          </View>
+          <TouchableOpacity style={UM.closeBtn} onPress={close} activeOpacity={0.8}>
+            <Ionicons name="close" size={18} color="#fff" />
+          </TouchableOpacity>
+        </LinearGradient>
+
+        <ScrollView
+          style={UM.scroll}
+          contentContainerStyle={{ paddingBottom:40 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Your Name */}
+          <Text style={UM.label}>Your Name <Text style={UM.required}>*</Text></Text>
+          <TextInput
+            style={UM.input}
+            placeholder="e.g. Ravi Teja"
+            placeholderTextColor={C.textLight}
+            value={name}
+            onChangeText={setName}
+          />
+
+          {/* Role / Position */}
+          <Text style={UM.label}>Role / Position <Text style={UM.required}>*</Text></Text>
+          <TextInput
+            style={UM.input}
+            placeholder="e.g. SDE — TCS NQT 2024"
+            placeholderTextColor={C.textLight}
+            value={role}
+            onChangeText={setRole}
+          />
+
+          {/* Company Picker */}
+          <Text style={UM.label}>Company <Text style={UM.required}>*</Text></Text>
+          <TouchableOpacity
+            style={[UM.input, UM.picker]}
+            onPress={() => setShowCompDrop(p => !p)}
+            activeOpacity={0.8}
+          >
+            <Text style={[UM.pickerTxt, !company && { color:C.textLight }]}>
+              {company || 'Select a company'}
+            </Text>
+            <Ionicons name={showCompDrop ? 'chevron-up' : 'chevron-down'} size={16} color={C.textLight} />
+          </TouchableOpacity>
+          {showCompDrop && (
+            <View style={UM.dropdown}>
+              <ScrollView style={{ maxHeight:180 }} nestedScrollEnabled>
+                {COMPANY_NAMES.map(cn => (
+                  <TouchableOpacity
+                    key={cn}
+                    style={[UM.dropItem, company === cn && UM.dropItemActive]}
+                    onPress={() => { setCompany(cn); setShowCompDrop(false); }}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[UM.dropItemTxt, company === cn && { color:C.primary, fontWeight:'700' }]}>{cn}</Text>
+                    {company === cn && <Ionicons name="checkmark" size={14} color={C.primary} />}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Difficulty */}
+          <Text style={UM.label}>Difficulty <Text style={UM.required}>*</Text></Text>
+          <View style={UM.diffRow}>
+            {DIFFICULTY_OPTIONS.map(d => {
+              const colors = { Easy:['#D1FAE5','#059669'], Medium:['#FEF3C7','#D97706'], Hard:['#FEE2E2','#DC2626'] };
+              const [bg, fg] = colors[d];
+              const active = difficulty === d;
+              return (
+                <TouchableOpacity
+                  key={d}
+                  style={[UM.diffChip, active && { backgroundColor:bg, borderColor:fg }]}
+                  onPress={() => setDifficulty(d)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[UM.diffChipTxt, active && { color:fg }]}>{d}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Interview Experience */}
+          <Text style={UM.label}>Interview Experience <Text style={UM.required}>*</Text></Text>
+          <TextInput
+            style={[UM.input, UM.textarea]}
+            placeholder="Describe the rounds, questions asked, atmosphere..."
+            placeholderTextColor={C.textLight}
+            value={experience}
+            onChangeText={setExperience}
+            multiline
+            textAlignVertical="top"
+          />
+
+          {/* Preparation Tips */}
+          <Text style={UM.label}>Preparation Tips <Text style={UM.optional}>(optional)</Text></Text>
+          <TextInput
+            style={[UM.input, UM.textarea]}
+            placeholder="Share what helped you prepare — resources, topics, strategies..."
+            placeholderTextColor={C.textLight}
+            value={tips}
+            onChangeText={setTips}
+            multiline
+            textAlignVertical="top"
+          />
+
+          {/* Submit */}
+          <TouchableOpacity onPress={handleSubmit} activeOpacity={0.88} style={{ marginTop:8 }}>
+            <LinearGradient colors={['#1E3A8A','#2563EB']} style={UM.submitBtn}>
+              <Ionicons name="cloud-upload-outline" size={18} color="#fff" />
+              <Text style={UM.submitTxt}>Submit Experience</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <Text style={UM.disclaimer}>
+            Your submission will be reviewed before publishing. We never share your personal details without consent.
+          </Text>
+        </ScrollView>
+      </Animated.View>
+    </Modal>
+  );
+};
+
+const UM = StyleSheet.create({
+  overlay:     { ...StyleSheet.absoluteFillObject, backgroundColor:'rgba(15,23,42,0.55)' },
+  sheet:       { position:'absolute', bottom:0, left:0, right:0, backgroundColor:'#F7F9FC', borderTopLeftRadius:24, borderTopRightRadius:24, maxHeight:height*0.92, paddingBottom: Platform.OS==='ios'?20:0 },
+  handle:      { width:36, height:4, borderRadius:2, backgroundColor:'#D1D5DB', alignSelf:'center', marginTop:12, marginBottom:0 },
+  modalHeader: { flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingHorizontal:20, paddingVertical:18 },
+  modalTitle:  { fontSize:17, fontWeight:'800', color:'#fff' },
+  modalSub:    { fontSize:12, color:'rgba(255,255,255,0.72)', marginTop:3 },
+  closeBtn:    { width:32, height:32, borderRadius:10, backgroundColor:'rgba(255,255,255,0.2)', justifyContent:'center', alignItems:'center' },
+  scroll:      { padding:16 },
+  label:       { fontSize:13, fontWeight:'700', color:C.textDark, marginBottom:6, marginTop:14 },
+  required:    { color:C.red },
+  optional:    { fontSize:11, color:C.textLight, fontWeight:'400' },
+  input:       { backgroundColor:C.surface, borderRadius:14, borderWidth:1, borderColor:C.border, paddingHorizontal:14, paddingVertical:12, fontSize:14, color:C.textDark },
+  textarea:    { minHeight:100, paddingTop:12 },
+  picker:      { flexDirection:'row', justifyContent:'space-between', alignItems:'center' },
+  pickerTxt:   { fontSize:14, color:C.textDark, flex:1 },
+  dropdown:    { backgroundColor:C.surface, borderRadius:14, borderWidth:1, borderColor:C.border, marginTop:4, overflow:'hidden' },
+  dropItem:    { flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingHorizontal:14, paddingVertical:11, borderBottomWidth:1, borderBottomColor:C.border },
+  dropItemActive:{ backgroundColor:'#EFF6FF' },
+  dropItemTxt: { fontSize:14, color:C.textDark },
+  diffRow:     { flexDirection:'row', gap:10 },
+  diffChip:    { flex:1, paddingVertical:10, borderRadius:12, borderWidth:1.5, borderColor:C.border, alignItems:'center', backgroundColor:C.surface },
+  diffChipTxt: { fontSize:13, fontWeight:'600', color:C.textMid },
+  submitBtn:   { flexDirection:'row', alignItems:'center', justifyContent:'center', gap:8, borderRadius:16, paddingVertical:16 },
+  submitTxt:   { fontSize:16, fontWeight:'800', color:'#fff' },
+  disclaimer:  { fontSize:11, color:C.textLight, textAlign:'center', marginTop:14, lineHeight:16 },
+});
+
+// ─── BOTTOM SHEET (experiences viewer) ───────────────────────────────────────
+const BottomSheet = ({ company, onClose }) => {
+  const slideY = useRef(new Animated.Value(height)).current;
+  const exps   = EXPERIENCES[company.id] || [];
+  useEffect(() => {
+    Animated.spring(slideY, { toValue:0, speed:18, bounciness:4, useNativeDriver:true }).start();
+  }, []);
+  const close = () => {
+    Animated.timing(slideY, { toValue:height, duration:280, easing:EASE, useNativeDriver:true }).start(onClose);
+  };
   return (
     <Modal transparent animationType="none" onRequestClose={close}>
       <TouchableWithoutFeedback onPress={close}>
         <View style={BS.overlay} />
       </TouchableWithoutFeedback>
-
       <Animated.View style={[BS.sheet, { transform:[{ translateY:slideY }] }]}>
         <View style={BS.handle} />
-
         <View style={BS.header}>
           <View style={{ flexDirection:'row', alignItems:'center', gap:12, flex:1 }}>
             <LinearGradient colors={company.grad} style={BS.logoBox}>
@@ -355,12 +392,7 @@ const BottomSheet = ({ company, onClose }) => {
             <Ionicons name="close" size={18} color={C.textMid} />
           </TouchableOpacity>
         </View>
-
-        <ScrollView
-          style={BS.scroll}
-          contentContainerStyle={{ paddingBottom:36 }}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView style={BS.scroll} contentContainerStyle={{ paddingBottom:36 }} showsVerticalScrollIndicator={false}>
           {exps.length === 0 ? (
             <View style={BS.empty}>
               <Text style={BS.emptyIcon}>📭</Text>
@@ -375,7 +407,6 @@ const BottomSheet = ({ company, onClose }) => {
     </Modal>
   );
 };
-
 const BS = StyleSheet.create({
   overlay:     { ...StyleSheet.absoluteFillObject, backgroundColor:'rgba(15,23,42,0.55)' },
   sheet:       { position:'absolute', bottom:0, left:0, right:0, backgroundColor:'#F7F9FC', borderTopLeftRadius:24, borderTopRightRadius:24, maxHeight:height*0.88, paddingBottom:Platform.OS==='ios'?20:0 },
@@ -393,30 +424,19 @@ const BS = StyleSheet.create({
   emptySub:    { fontSize:13, color:C.textLight },
 });
 
-// ─── HORIZONTAL COMPANY CARD ──────────────────────────────────────────────────
-// New: horizontal layout — full-width card, logo left, info right, CTA at end
+// ─── COMPANY CARD ──────────────────────────────────────────────────────────────
 const HCompanyCard = ({ company, onPress, index }) => {
   const anim  = useEntrance(index * 60, 18);
   const press = useRef(new Animated.Value(1)).current;
   const onIn  = () => Animated.spring(press, { toValue:0.97, speed:22, useNativeDriver:true }).start();
   const onOut = () => Animated.spring(press, { toValue:1,    speed:16, useNativeDriver:true }).start();
-
   return (
     <Animated.View style={[anim, { transform:[...anim.transform, { scale:press }] }]}>
-      <TouchableOpacity
-        onPressIn={onIn} onPressOut={onOut}
-        onPress={() => onPress(company)}
-        activeOpacity={1}
-        style={HC.card}
-      >
-        {/* Left: gradient logo */}
+      <TouchableOpacity onPressIn={onIn} onPressOut={onOut} onPress={() => onPress(company)} activeOpacity={1} style={HC.card}>
         <LinearGradient colors={company.grad} style={HC.logoBox}>
           <Text style={HC.logoEmoji}>{company.emoji}</Text>
         </LinearGradient>
-
-        {/* Middle: info */}
         <View style={HC.info}>
-          {/* Tag */}
           <View style={[HC.tag, { backgroundColor:company.tagBg }]}>
             <Text style={[HC.tagTxt, { color:company.tagColor }]}>{company.tag}</Text>
           </View>
@@ -429,8 +449,6 @@ const HCompanyCard = ({ company, onPress, index }) => {
             <Text style={HC.reviews}>{company.reviewCount} reviews</Text>
           </View>
         </View>
-
-        {/* Right: CTA arrow */}
         <View style={HC.ctaCol}>
           <LinearGradient colors={[C.primary, C.primaryDark]} style={HC.ctaBtn}>
             <Ionicons name="chevron-forward" size={18} color="#fff" />
@@ -441,7 +459,6 @@ const HCompanyCard = ({ company, onPress, index }) => {
     </Animated.View>
   );
 };
-
 const HC = StyleSheet.create({
   card:      { flexDirection:'row', alignItems:'center', backgroundColor:C.surface, borderRadius:20, marginBottom:12, padding:14, gap:14, borderWidth:1, borderColor:'rgba(37,99,235,0.07)', shadowColor:C.primary+'18', shadowOffset:{width:0,height:3}, shadowOpacity:1, shadowRadius:10, elevation:4 },
   logoBox:   { width:56, height:56, borderRadius:16, justifyContent:'center', alignItems:'center', flexShrink:0 },
@@ -463,8 +480,9 @@ const HC = StyleSheet.create({
 // ─── MAIN SCREEN ──────────────────────────────────────────────────────────────
 export default function PlacementsScreen({ navigation }) {
   const SB_H = Platform.OS==='ios' ? 44 : (StatusBar.currentHeight||24);
-  const [search,          setSearch]          = useState('');
-  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [search,           setSearch]           = useState('');
+  const [selectedCompany,  setSelectedCompany]  = useState(null);
+  const [showUpload,       setShowUpload]        = useState(false);
 
   const headerAnim = useEntrance(0, -16);
   const statsAnim  = useEntrance(120, 14);
@@ -506,18 +524,14 @@ export default function PlacementsScreen({ navigation }) {
                 <Text style={S.headerTitle}>PlacePrep</Text>
                 <Text style={S.headerSub}>Real interview stories from seniors</Text>
               </View>
-              <View style={S.countBadge}>
-                <Text style={S.countVal}>{COMPANIES.length}</Text>
-                <Text style={S.countLbl}>Companies</Text>
-              </View>
             </View>
 
-            {/* Stats strip */}
+            {/* Stats strip — Experiences | Students | Placed */}
             <Animated.View style={[statsAnim, S.statsRow]}>
               {[
-                { label:'Experiences', value:'1,532' },
-                { label:'Students',    value:'847'   },
-                { label:'Avg Rating',  value:'4.3 ★' },
+                { label:'Experiences', value:'1,532'             },
+                { label:'Companies',   value:`${COMPANIES.length}` },
+                { label:'Placed',      value:'620+'              },
               ].map((st, i) => (
                 <View key={i} style={[S.statBox, i < 2 && S.statBorderR]}>
                   <Text style={S.statVal}>{st.value}</Text>
@@ -545,15 +559,26 @@ export default function PlacementsScreen({ navigation }) {
           </LinearGradient>
         </Animated.View>
 
-        {/* ── SECTION LABEL ── */}
+        {/* ── SECTION LABEL + UPLOAD BUTTON ── */}
         <Animated.View style={[listAnim, S.sectionHeader]}>
-          <Text style={S.sectionTitle}>{search ? `Results for "${search}"` : 'Top Companies'}</Text>
-          <View style={S.countChip}>
-            <Text style={S.countChipTxt}>{filtered.length} found</Text>
+          <View>
+            <Text style={S.sectionTitle}>{search ? `Results for "${search}"` : 'Top Companies'}</Text>
+            <View style={S.countChipRow}>
+              <View style={S.countChip}>
+                <Text style={S.countChipTxt}>{filtered.length} found</Text>
+              </View>
+            </View>
           </View>
+          {/* Upload Experience CTA */}
+          <TouchableOpacity style={S.uploadBtn} onPress={() => setShowUpload(true)} activeOpacity={0.85}>
+            <LinearGradient colors={['#1E3A8A','#2563EB']} style={S.uploadBtnInner}>
+              <Ionicons name="add-circle-outline" size={15} color="#fff" />
+              <Text style={S.uploadBtnTxt}>Share</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </Animated.View>
 
-        {/* ── HORIZONTAL COMPANY LIST ── */}
+        {/* ── COMPANY LIST ── */}
         <Animated.View style={[listAnim, S.listContainer]}>
           {filtered.length === 0 ? (
             <View style={S.empty}>
@@ -566,23 +591,20 @@ export default function PlacementsScreen({ navigation }) {
             </View>
           ) : (
             filtered.map((company, index) => (
-              <HCompanyCard
-                key={company.id}
-                company={company}
-                onPress={setSelectedCompany}
-                index={index}
-              />
+              <HCompanyCard key={company.id} company={company} onPress={setSelectedCompany} index={index} />
             ))
           )}
         </Animated.View>
       </ScrollView>
 
-      {/* ── BOTTOM SHEET ── */}
+      {/* ── EXPERIENCE VIEWER BOTTOM SHEET ── */}
       {selectedCompany && (
-        <BottomSheet
-          company={selectedCompany}
-          onClose={() => setSelectedCompany(null)}
-        />
+        <BottomSheet company={selectedCompany} onClose={() => setSelectedCompany(null)} />
+      )}
+
+      {/* ── UPLOAD EXPERIENCE MODAL ── */}
+      {showUpload && (
+        <UploadModal onClose={() => setShowUpload(false)} />
       )}
     </View>
   );
@@ -600,28 +622,37 @@ const S = StyleSheet.create({
   topRow:    { flexDirection:'row', alignItems:'flex-start', marginBottom:18, gap:12 },
   backBtn:   { width:38, height:38, borderRadius:19, backgroundColor:'rgba(255,255,255,0.18)', justifyContent:'center', alignItems:'center', marginTop:2 },
   subLabel:  { fontSize:11, color:'rgba(255,255,255,0.65)', fontWeight:'600', letterSpacing:0.8, textTransform:'uppercase', marginBottom:4 },
-  headerTitle:{ fontSize:26, fontWeight:'800', color:'#fff', lineHeight:30 },
+
+  // New: title row with inline companies count
+  titleRow:       { flexDirection:'row', alignItems:'center', gap:10, flexWrap:'wrap' },
+  headerTitle:    { fontSize:26, fontWeight:'800', color:'#fff', lineHeight:30 },
+  inlineCountBadge:{ flexDirection:'row', alignItems:'center', backgroundColor:'rgba(255,255,255,0.20)', borderRadius:10, paddingHorizontal:10, paddingVertical:5, borderWidth:1, borderColor:'rgba(255,255,255,0.28)', alignSelf:'center', gap:2 },
+  inlineCountVal:  { fontSize:12, fontWeight:'800', color:'#fff' },
+  inlineCountLbl:  { fontSize:11, color:'rgba(255,255,255,0.85)', fontWeight:'600' },
+  inlineCountSep:  { fontSize:11, color:'rgba(255,255,255,0.65)', fontWeight:'500' },
+
   headerSub: { fontSize:13, color:'rgba(255,255,255,0.70)', marginTop:4 },
 
-  countBadge:{ backgroundColor:'rgba(255,255,255,0.15)', borderRadius:16, paddingHorizontal:14, paddingVertical:10, alignItems:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.20)' },
-  countVal:  { fontSize:22, fontWeight:'800', color:'#fff' },
-  countLbl:  { fontSize:10, color:'rgba(255,255,255,0.75)', fontWeight:'600', letterSpacing:0.3 },
-
-  statsRow:  { flexDirection:'row', backgroundColor:'rgba(255,255,255,0.12)', borderRadius:16, marginBottom:16, overflow:'hidden' },
-  statBox:   { flex:1, paddingVertical:10, alignItems:'center' },
+  statsRow:   { flexDirection:'row', backgroundColor:'rgba(255,255,255,0.12)', borderRadius:16, marginBottom:16, overflow:'hidden' },
+  statBox:    { flex:1, paddingVertical:10, alignItems:'center' },
   statBorderR:{ borderRightWidth:1, borderRightColor:'rgba(255,255,255,0.18)' },
-  statVal:   { fontSize:14, fontWeight:'800', color:'#fff' },
-  statLbl:   { fontSize:10, color:'rgba(255,255,255,0.65)', marginTop:2 },
+  statVal:    { fontSize:14, fontWeight:'800', color:'#fff' },
+  statLbl:    { fontSize:10, color:'rgba(255,255,255,0.65)', marginTop:2 },
 
-  searchWrap:{ flexDirection:'row', alignItems:'center', backgroundColor:C.surface, borderRadius:14, paddingHorizontal:14, paddingVertical:11, shadowColor:'#00000018', shadowOffset:{width:0,height:2}, shadowOpacity:1, shadowRadius:8, elevation:3 },
-  searchIcon:{ marginRight:6 },
+  searchWrap: { flexDirection:'row', alignItems:'center', backgroundColor:C.surface, borderRadius:14, paddingHorizontal:14, paddingVertical:11, shadowColor:'#00000018', shadowOffset:{width:0,height:2}, shadowOpacity:1, shadowRadius:8, elevation:3 },
+  searchIcon: { marginRight:6 },
   searchInput:{ flex:1, fontSize:14, color:C.textDark, padding:0 },
   searchClear:{ marginLeft:8 },
 
-  sectionHeader: { flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingHorizontal:16, paddingTop:20, paddingBottom:12 },
-  sectionTitle:  { fontSize:16, fontWeight:'800', color:C.textDark },
-  countChip:     { backgroundColor:C.primaryPale, borderRadius:10, paddingHorizontal:10, paddingVertical:4 },
-  countChipTxt:  { fontSize:11, fontWeight:'700', color:C.primaryText },
+  sectionHeader:  { flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingHorizontal:16, paddingTop:20, paddingBottom:12 },
+  sectionTitle:   { fontSize:16, fontWeight:'800', color:C.textDark },
+  countChipRow:   { flexDirection:'row', marginTop:4 },
+  countChip:      { backgroundColor:C.primaryPale, borderRadius:10, paddingHorizontal:10, paddingVertical:4, alignSelf:'flex-start' },
+  countChipTxt:   { fontSize:11, fontWeight:'700', color:C.primaryText },
+
+  uploadBtn:      { borderRadius:12, overflow:'hidden' },
+  uploadBtnInner: { flexDirection:'row', alignItems:'center', gap:5, paddingHorizontal:14, paddingVertical:10 },
+  uploadBtnTxt:   { fontSize:13, fontWeight:'700', color:'#fff' },
 
   listContainer: { paddingHorizontal:16 },
 
