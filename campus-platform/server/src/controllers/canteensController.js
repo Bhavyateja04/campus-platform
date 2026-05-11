@@ -1,105 +1,114 @@
-const canteens = require("../models/CanteensModel");
+const Canteen = require('../models/CanteensModel');
 
-// Add a new canteen
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Extracts only the known canteen fields from the request body.
+ * Prevents unintended fields from being written to the database.
+ */
+const extractCanteenFields = ({ name, location, contactNumber, openingTime, closingTime, menu, image }) => ({
+  name,
+  location,
+  contactNumber,
+  openingTime,
+  closingTime,
+  menu,
+  image,
+});
+
+// ─── Controllers ─────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/canteens
+ * Add a new canteen.
+ */
 const addCanteen = async (req, res) => {
   try {
-    const {
-      name,
-      location,
-      contactNumber,
-      openingTime,
-      closingTime,
-      menu,
-      image,
-    } = req.body;
-    const newCanteen = await canteens.create({
-      name: name,
-      location: location,
-      contactNumber: contactNumber,
-      openingTime: openingTime,
-      closingTime: closingTime,
-      menu: menu,
-      image: image,
-    });
-    res
-      .status(201)
-      .json({ message: "Canteen added successfully", canteen: newCanteen });
+    const canteen = await Canteen.create(extractCanteenFields(req.body));
+
+    res.status(201).json({ message: 'Canteen added successfully', data: canteen });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error adding canteen" });
+    console.error('[addCanteen]', error);
+    res.status(500).json({ message: 'Error adding canteen' });
   }
 };
 
-// Get all canteens
+/**
+ * GET /api/canteens
+ * Retrieve all canteens.
+ */
 const getCanteens = async (req, res) => {
   try {
-    const allCanteens = await canteens.find();
-    res.status(200).json(allCanteens);
+    const canteenList = await Canteen.find();
+
+    res.status(200).json({ message: 'Canteens retrieved successfully', data: canteenList });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error fetching canteens" });
+    console.error('[getCanteens]', error);
+    res.status(500).json({ message: 'Error fetching canteens' });
   }
 };
 
+/**
+ * GET /api/canteens/:canteenId
+ * Retrieve a single canteen by ID.
+ */
 const getCanteenById = async (req, res) => {
   try {
-    const { canteenId } = req.params;
-    const canteen = await canteens.findById(canteenId);
+    const canteen = await Canteen.findById(req.params.canteenId);
+
     if (!canteen) {
-      return res.status(404).json({ message: "Canteen not found" });
+      return res.status(404).json({ message: 'Canteen not found' });
     }
-    res.status(200).json(canteen);
+
+    res.status(200).json({ message: 'Canteen retrieved successfully', data: canteen });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error fetching canteen" });
+    console.error('[getCanteenById]', error);
+    res.status(500).json({ message: 'Error fetching canteen' });
   }
 };
 
+/**
+ * PUT /api/canteens/:canteenId
+ * Update an existing canteen by ID.
+ */
 const updateCanteen = async (req, res) => {
   try {
-    const { canteenId } = req.params;
-    const {
-      name,
-      location,
-      contactNumber,
-      openingTime,
-      closingTime,
-      menu,
-      image,
-    } = req.body;
-    const updatedCanteen = await canteens.findByIdAndUpdate(
-      canteenId,
-      { name, location, contactNumber, openingTime, closingTime, menu, image },
-      { new: true },
+    const canteen = await Canteen.findByIdAndUpdate(
+      req.params.canteenId,
+      extractCanteenFields(req.body),
+      { new: true }
     );
-    if (!updatedCanteen) {
-      return res.status(404).json({ message: "Canteen not found" });
+
+    if (!canteen) {
+      return res.status(404).json({ message: 'Canteen not found' });
     }
-    res.status(200).json(updatedCanteen);
+
+    res.status(200).json({ message: 'Canteen updated successfully', data: canteen });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error updating canteen" });
+    console.error('[updateCanteen]', error);
+    res.status(500).json({ message: 'Error updating canteen' });
   }
 };
 
+/**
+ * DELETE /api/canteens/:canteenId
+ * Delete a canteen by ID.
+ */
 const deleteCanteen = async (req, res) => {
   try {
-    const { canteenId } = req.params;
-    const deletedCanteen = await canteens.findByIdAndDelete(canteenId);
-    if (!deletedCanteen) {
-      return res.status(404).json({ message: "Canteen not found" });
+    const canteen = await Canteen.findByIdAndDelete(req.params.canteenId);
+
+    if (!canteen) {
+      return res.status(404).json({ message: 'Canteen not found' });
     }
-    res.status(200).json({ message: "Canteen deleted successfully" });
+
+    res.status(200).json({ message: 'Canteen deleted successfully' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error deleting canteen" });
+    console.error('[deleteCanteen]', error);
+    res.status(500).json({ message: 'Error deleting canteen' });
   }
 };
 
-module.exports = {
-  addCanteen,
-  getCanteens,
-  getCanteenById,
-  updateCanteen,
-  deleteCanteen,
-};
+// ─── Exports ──────────────────────────────────────────────────────────────────
+
+module.exports = { addCanteen, getCanteens, getCanteenById, updateCanteen, deleteCanteen };
