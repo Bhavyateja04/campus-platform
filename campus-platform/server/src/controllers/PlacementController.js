@@ -1,24 +1,27 @@
 const Placements = require('../models/PlacementsModels');
 
-// ─── Create a new placement experience ───────────────────────────────────────
+// ─── Controllers ─────────────────────────────────────────────────────────────
 
+/**
+ * POST /placements
+ * Create a new placement experience.
+ */
 const createPlacementItem = async (req, res) => {
   try {
     const item = await Placements.create(req.body);
 
-    res.status(201).json({
-      message: 'Experience uploaded successfully',
-      data: item,
-    });
+    res.status(201).json({ message: 'Experience uploaded successfully', data: item });
   } catch (error) {
-    console.error('createPlacementItem error:', error);
+    console.error('[createPlacementItem]', error);
     res.status(500).json({ message: 'Error creating experience item' });
   }
 };
 
-// ─── Update a placement experience ───────────────────────────────────────────
-
-const updateItem = async (req, res) => {
+/**
+ * PUT /placements/:id
+ * Update a placement experience by ID.
+ */
+const updatePlacementItem = async (req, res) => {
   try {
     const item = await Placements.findByIdAndUpdate(req.params.id, req.body, { new: true });
 
@@ -26,35 +29,33 @@ const updateItem = async (req, res) => {
       return res.status(404).json({ message: 'Experience item not found' });
     }
 
-    res.status(200).json({
-      message: 'Experience item updated successfully',
-      data: item,
-    });
+    res.status(200).json({ message: 'Experience item updated successfully', data: item });
   } catch (error) {
-    console.error('updateItem error:', error);
+    console.error('[updatePlacementItem]', error);
     res.status(500).json({ message: 'Error updating experience item' });
   }
 };
 
-// ─── Retrieve all placement experiences ──────────────────────────────────────
-
-const viewItems = async (req, res) => {
+/**
+ * GET /placements
+ * Retrieve all placement experiences.
+ */
+const getAllPlacementItems = async (req, res) => {
   try {
     const items = await Placements.find();
 
-    res.status(200).json({
-      message: 'Experience items retrieved successfully',
-      data: items,
-    });
+    res.status(200).json({ message: 'Experience items retrieved successfully', data: items });
   } catch (error) {
-    console.error('viewItems error:', error);
+    console.error('[getAllPlacementItems]', error);
     res.status(500).json({ message: 'Error retrieving experience items' });
   }
 };
 
-// ─── Delete a placement experience ────────────────────────────────────────────
-
-const deleteItem = async (req, res) => {
+/**
+ * DELETE /placements/:id
+ * Delete a placement experience by ID.
+ */
+const deletePlacementItem = async (req, res) => {
   try {
     const item = await Placements.findByIdAndDelete(req.params.id);
 
@@ -64,9 +65,16 @@ const deleteItem = async (req, res) => {
 
     res.status(200).json({ message: 'Experience item deleted successfully' });
   } catch (error) {
-    console.error('deleteItem error:', error);
+    console.error('[deletePlacementItem]', error);
     res.status(500).json({ message: 'Error deleting experience item' });
   }
 };
 
-module.exports = { createPlacementItem, updateItem, viewItems, deleteItem };
+// ─── Exports ──────────────────────────────────────────────────────────────────
+
+module.exports = {
+  createPlacementItem,
+  updatePlacementItem,
+  getAllPlacementItems,
+  deletePlacementItem,
+};
