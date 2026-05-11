@@ -4,13 +4,14 @@ const productSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
+      required: [true, "Product name is required"],
       trim: true,
     },
     sku: {
       type: String,
       unique: true,
       trim: true,
+      uppercase: true, // Ensures consistent SKU formatting e.g. "SKU-001"
     },
     category: {
       type: String,
@@ -18,10 +19,12 @@ const productSchema = new mongoose.Schema(
     },
     description: {
       type: String,
+      trim: true,
     },
     imageUrl: {
-      type: String, // URL or base64 of the product image
-      required: true,
+      type: String,
+      required: [true, "Product image is required"],
+      trim: true,
     },
     imageBase64: {
       type: String, // Optional: store base64 directly
@@ -35,14 +38,14 @@ const productSchema = new mongoose.Schema(
       default: null,
     },
     analysisCache: {
-      detections: { type: mongoose.Schema.Types.Mixed, default: null },
-      summary: { type: String, default: null },
+      detections:      { type: mongoose.Schema.Types.Mixed, default: null },
+      summary:         { type: String, default: null },
       similarProducts: { type: [String], default: [] },
-      cachedAt: { type: Date, default: null },
+      cachedAt:        { type: Date, default: null },
     },
   },
   {
-    timestamps: true,
+    timestamps: true, // Auto-manages createdAt & updatedAt
   }
 );
 
