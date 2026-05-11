@@ -11,60 +11,96 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
+// ─────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────
+
 const LANDMARKS = [
-  { name: "Admin Block", note: "Admissions, records, support" },
-  { name: "Library", note: "Study halls, journals, computers" },
-  { name: "Satya Canteen", note: "Main food court near the courtyard" },
-  { name: "Innovation Lab", note: "Project demos and maker space" },
-  { name: "Sports Ground", note: "Outdoor practice and events" },
+  { name: "Admin Block",     note: "Admissions, records, support" },
+  { name: "Library",         note: "Study halls, journals, computers" },
+  { name: "Satya Canteen",   note: "Main food court near the courtyard" },
+  { name: "Innovation Lab",  note: "Project demos and maker space" },
+  { name: "Sports Ground",   note: "Outdoor practice and events" },
 ];
+
+// ─────────────────────────────────────────────
+// SUB-COMPONENTS
+// ─────────────────────────────────────────────
+
+const Header = ({ onBack }) => (
+  <LinearGradient colors={["#2E4D7A", "#4A6FA5"]} style={styles.header}>
+    <TouchableOpacity style={styles.backBtn} onPress={onBack}>
+      <Ionicons name="chevron-back" size={22} color="#fff" />
+    </TouchableOpacity>
+    <View>
+      <Text style={styles.title}>Campus Map</Text>
+      <Text style={styles.subtitle}>Quick navigation to key places on campus</Text>
+    </View>
+  </LinearGradient>
+);
+
+const MapInfoCard = () => (
+  <View style={styles.mapCard}>
+    <View style={styles.mapBadge}>
+      <Ionicons name="location" size={18} color="#fff" />
+    </View>
+    <Text style={styles.mapHeadline}>Explore Aditya University</Text>
+    <Text style={styles.mapText}>
+      This is a lightweight in-app campus guide. It works even if the API is
+      offline.
+    </Text>
+  </View>
+);
+
+const LandmarkCard = ({ name, note }) => (
+  <View style={styles.landmarkCard}>
+    <Ionicons name="ellipse" size={10} color="#4A6FA5" />
+    <View style={styles.landmarkContent}>
+      <Text style={styles.landmarkName}>{name}</Text>
+      <Text style={styles.landmarkNote}>{note}</Text>
+    </View>
+  </View>
+);
+
+// ─────────────────────────────────────────────
+// MAIN SCREEN
+// ─────────────────────────────────────────────
 
 export default function CampusMapScreen({ navigation }) {
   return (
-    <SafeAreaView style={S.root} edges={["left", "right", "bottom"]}>
+    <SafeAreaView style={styles.root} edges={["left", "right", "bottom"]}>
       <StatusBar barStyle="light-content" />
-      <LinearGradient colors={["#2E4D7A", "#4A6FA5"]} style={S.header}>
-        <TouchableOpacity style={S.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={22} color="#fff" />
-        </TouchableOpacity>
-        <View>
-          <Text style={S.title}>Campus Map</Text>
-          <Text style={S.sub}>Quick navigation to key places on campus</Text>
-        </View>
-      </LinearGradient>
+
+      <Header onBack={() => navigation.goBack()} />
 
       <ScrollView
-        contentContainerStyle={S.body}
+        contentContainerStyle={styles.body}
         showsVerticalScrollIndicator={false}
       >
-        <View style={S.mapCard}>
-          <View style={S.mapBadge}>
-            <Ionicons name="location" size={18} color="#fff" />
-          </View>
-          <Text style={S.mapHeadline}>Explore Aditya University</Text>
-          <Text style={S.mapText}>
-            This is a lightweight in-app campus guide. It is not backend data,
-            so it works even if the API is offline.
-          </Text>
-        </View>
+        <MapInfoCard />
 
-        <Text style={S.sectionTitle}>Key landmarks</Text>
+        <Text style={styles.sectionTitle}>Key Landmarks</Text>
+
         {LANDMARKS.map((item) => (
-          <View key={item.name} style={S.landmarkCard}>
-            <Ionicons name="ellipse" size={10} color="#4A6FA5" />
-            <View style={{ flex: 1 }}>
-              <Text style={S.landmarkName}>{item.name}</Text>
-              <Text style={S.landmarkNote}>{item.note}</Text>
-            </View>
-          </View>
+          <LandmarkCard key={item.name} name={item.name} note={item.note} />
         ))}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const S = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#F5F8FC" },
+// ─────────────────────────────────────────────
+// STYLES
+// ─────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  // Layout
+  root: {
+    flex: 1,
+    backgroundColor: "#F5F8FC",
+  },
+
+  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -80,9 +116,25 @@ const S = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  title: { color: "#fff", fontSize: 22, fontWeight: "900" },
-  sub: { color: "rgba(255,255,255,0.78)", fontSize: 12, marginTop: 3 },
-  body: { padding: 16, paddingBottom: 36, gap: 12 },
+  title: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  subtitle: {
+    color: "rgba(255,255,255,0.78)",
+    fontSize: 12,
+    marginTop: 3,
+  },
+
+  // Body
+  body: {
+    padding: 16,
+    paddingBottom: 36,
+    gap: 12,
+  },
+
+  // Map Info Card
   mapCard: {
     backgroundColor: "#fff",
     borderRadius: 18,
@@ -105,7 +157,12 @@ const S = StyleSheet.create({
     color: "#0D1B2A",
     marginBottom: 8,
   },
-  mapText: { color: "#3D5068", lineHeight: 20 },
+  mapText: {
+    color: "#3D5068",
+    lineHeight: 20,
+  },
+
+  // Section Title
   sectionTitle: {
     fontSize: 15,
     fontWeight: "800",
@@ -113,6 +170,8 @@ const S = StyleSheet.create({
     marginTop: 8,
     marginBottom: 2,
   },
+
+  // Landmark Card
   landmarkCard: {
     flexDirection: "row",
     gap: 10,
@@ -123,7 +182,14 @@ const S = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#D6E4F0",
   },
-  landmarkName: { color: "#0D1B2A", fontWeight: "800", fontSize: 14 },
+  landmarkContent: {
+    flex: 1,
+  },
+  landmarkName: {
+    color: "#0D1B2A",
+    fontWeight: "800",
+    fontSize: 14,
+  },
   landmarkNote: {
     color: "#3D5068",
     fontSize: 12,
