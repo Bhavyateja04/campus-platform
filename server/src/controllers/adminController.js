@@ -1,90 +1,96 @@
-const User = require("../models/UserModel");
-const bcrypt = require("bcrypt");
-// CREATE USER
+const User = require('../models/UserModel');
+const bcrypt = require('bcrypt');
+
+// ─── Allowed college email domains ───────────────────────────────────────────
+
+const ALLOWED_DOMAINS = /@(acet|aec|aus)\.ac\.in$/;
+
+// ─── Create a new user ────────────────────────────────────────────────────────
+
 const createUser = async (req, res) => {
   try {
-    //only college mail is being allowed
-    const {email} =req.body;
-    const allowedDomains=/@(acet|aec|aus)\.ac\.in$/;
-    if(!allowedDomains.test(email)){
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    if (!ALLOWED_DOMAINS.test(email)) {
       return res.status(400).json({
-        message: "Email must be from acet.ac.in, aec.ac.in, or aus.ac.in domains"
+        message: 'Email must be from acet.ac.in, aec.ac.in, or aus.ac.in domains',
       });
     }
-    const {password}=req.body;
-    const hashePassword=await bcrypt.hash(password,10);
-    req.body.password=hashePassword;
-    const user = await User.create(req.body);
-    console.log(user);
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: 'A user with this email already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({ ...req.body, password: hashedPassword });
+
     res.status(201).json({
-      message: "User created successfully",
-      data: user,
+      message: 'User created successfully',
+      data: { id: user._id, email: user.email, name: user.name },
     });
-    
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Error creating user"
-    });
+    console.error('createUser error:', error);
+    res.status(500).json({ message: 'Error creating user' });
   }
 };
 
+// ─── Get all users ────────────────────────────────────────────────────────────
 
-// GET ALL USERS
 const getUsers = async (req, res) => {
+  try {
+    const users = await User.find().select('-password');
 
-  const users = await User.find().select("-password");
-
-  res.json({
-    message: "Users retrieved successfully",
-    data: users
-  });
-
+    res.status(200).json({
+      message: 'Users retrieved successfully',
+      data: users,
+    });
+  } catch (error) {
+    console.error('getUsers error:', error);
+    res.status(500).json({ message: 'Error retrieving users' });
+  }
 };
 
+// ─── Delete a user ────────────────────────────────────────────────────────────
 
-// DELETE USER
 const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
 
-  await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-  res.json({
-    message: "User deleted successfully"
-  });
-
+    res.status(200).json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('deleteUser error:', error);
+    res.status(500).json({ message: 'Error deleting user' });
+  }
 };
 
+// ─── Update a user ────────────────────────────────────────────────────────────
 
-// UPDATE USER
 const updateUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true }).select('-password');
 
-  const user = await User.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true }
-  );
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-  res.json({
-    message: "User updated successfully",
-    data: user
-  });
-
-};
-// view all lost items
-const getAllLostItems = async (req, res) => {
-  const items = await LostItem.find();
-  res.json(items);
+    res.status(200).json({
+      message: 'User updated successfully',
+      data: user,
+    });
+  } catch (error) {
+    console.error('updateUser error:', error);
+    res.status(500).json({ message: 'Error updating user' });
+  }
 };
 
-// view all goods
-const getAllGoods = async (req, res) => {
-  const items = await Goods.find();
-  res.json(items);
-};
-
-module.exports = {
-  createUser,
-  getUsers,
-  deleteUser,
-  updateUser
-};
+module.exports = { createUser, getUsers, deleteUser, updateUser };
