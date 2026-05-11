@@ -1,113 +1,30 @@
-<<<<<<< HEAD:campus-platform/server/src/controllers/adminController.js
-const User = require("../models/UserModel");
-const bcrypt = require("bcrypt");
-const { emitRealtime } = require("../realtime");
-// CREATE USER
-const createUser = async (req, res) => {
-  try {
-    //only college mail is being allowed
-    const { email } = req.body;
-    const allowedDomains = /@(acet|aec|aus)\.ac\.in$/;
-    if (!allowedDomains.test(email)) {
-      return res.status(400).json({
-        message:
-          "Email must be from acet.ac.in, aec.ac.in, or aus.ac.in domains",
-      });
-    }
-    const { password } = req.body;
-    const hashePassword = await bcrypt.hash(password, 10);
-    req.body.password = hashePassword;
-    const user = await User.create(req.body);
-    const safeUser = user.toObject();
-    delete safeUser.password;
-    emitRealtime("admin:users-changed", {
-      action: "created",
-      user: safeUser,
-    });
-    res.status(201).json({
-      message: "User created successfully",
-      data: safeUser,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Error creating user",
-    });
-  }
-};
-
-// GET ALL USERS
-const getUsers = async (req, res) => {
-  const users = await User.find().select("-password");
-
-  res.json({
-    message: "Users retrieved successfully",
-    data: users,
-  });
-};
-
-// DELETE USER
-const deleteUser = async (req, res) => {
-  await User.findByIdAndDelete(req.params.id);
-  emitRealtime("admin:users-changed", {
-    action: "deleted",
-    userId: req.params.id,
-  });
-
-  res.json({
-    message: "User deleted successfully",
-  });
-};
-
-// UPDATE USER
-const updateUser = async (req, res) => {
-  const user = await User.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-  });
-
-  const safeUser = user ? user.toObject() : null;
-  if (safeUser) {
-    delete safeUser.password;
-  }
-
-  emitRealtime("admin:users-changed", {
-    action: "updated",
-    user: safeUser,
-  });
-
-  res.json({
-    message: "User updated successfully",
-    data: safeUser,
-  });
-};
-// view all lost items
-const getAllLostItems = async (req, res) => {
-  const items = await LostItem.find();
-  res.json(items);
-};
-
-// view all goods
-const getAllGoods = async (req, res) => {
-  const items = await Goods.find();
-  res.json(items);
-};
-
-module.exports = {
-  createUser,
-  getUsers,
-  deleteUser,
-  updateUser,
-};
-=======
-const User = require('../models/UserModel');
 const bcrypt = require('bcrypt');
 
-// ─── Allowed college email domains ───────────────────────────────────────────
+const User           = require('../models/UserModel');
+const { emitRealtime } = require('../realtime');
 
-const ALLOWED_DOMAINS = /@(acet|aec|aus)\.ac\.in$/;
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-// ─── Create a new user ────────────────────────────────────────────────────────
+const ALLOWED_EMAIL_DOMAINS = /@(acet|aec|aus)\.ac\.in$/;
+const SALT_ROUNDS           = 10;
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Returns a plain user object with the password field removed.
+ */
+const toSafeUser = (user) => {
+  const safeUser = user.toObject();
+  delete safeUser.password;
+  return safeUser;
+};
+
+// ─── Controllers ─────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/admin/users
+ * Create a new user. Only college email domains are permitted.
+ */
 const createUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -116,7 +33,7 @@ const createUser = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    if (!ALLOWED_DOMAINS.test(email)) {
+    if (!ALLOWED_EMAIL_DOMAINS.test(email)) {
       return res.status(400).json({
         message: 'Email must be from acet.ac.in, aec.ac.in, or aus.ac.in domains',
       });
@@ -127,38 +44,38 @@ const createUser = async (req, res) => {
       return res.status(409).json({ message: 'A user with this email already exists' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+    const user           = await User.create({ ...req.body, password: hashedPassword });
+    const safeUser       = toSafeUser(user);
 
-    const user = await User.create({ ...req.body, password: hashedPassword });
+    emitRealtime('admin:users-changed', { action: 'created', user: safeUser });
 
-    res.status(201).json({
-      message: 'User created successfully',
-      data: { id: user._id, email: user.email, name: user.name },
-    });
+    res.status(201).json({ message: 'User created successfully', data: safeUser });
   } catch (error) {
-    console.error('createUser error:', error);
+    console.error('[createUser]', error);
     res.status(500).json({ message: 'Error creating user' });
   }
 };
 
-// ─── Get all users ────────────────────────────────────────────────────────────
-
+/**
+ * GET /api/admin/users
+ * Retrieve all users (passwords excluded).
+ */
 const getUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password');
 
-    res.status(200).json({
-      message: 'Users retrieved successfully',
-      data: users,
-    });
+    res.status(200).json({ message: 'Users retrieved successfully', data: users });
   } catch (error) {
-    console.error('getUsers error:', error);
+    console.error('[getUsers]', error);
     res.status(500).json({ message: 'Error retrieving users' });
   }
 };
 
-// ─── Delete a user ────────────────────────────────────────────────────────────
-
+/**
+ * DELETE /api/admin/users/:id
+ * Delete a user by ID.
+ */
 const deleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
@@ -167,15 +84,19 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    emitRealtime('admin:users-changed', { action: 'deleted', userId: req.params.id });
+
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
-    console.error('deleteUser error:', error);
+    console.error('[deleteUser]', error);
     res.status(500).json({ message: 'Error deleting user' });
   }
 };
 
-// ─── Update a user ────────────────────────────────────────────────────────────
-
+/**
+ * PUT /api/admin/users/:id
+ * Update a user by ID (password excluded from response).
+ */
 const updateUser = async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true }).select('-password');
@@ -184,15 +105,15 @@ const updateUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.status(200).json({
-      message: 'User updated successfully',
-      data: user,
-    });
+    emitRealtime('admin:users-changed', { action: 'updated', user });
+
+    res.status(200).json({ message: 'User updated successfully', data: user });
   } catch (error) {
-    console.error('updateUser error:', error);
+    console.error('[updateUser]', error);
     res.status(500).json({ message: 'Error updating user' });
   }
 };
 
+// ─── Exports ──────────────────────────────────────────────────────────────────
+
 module.exports = { createUser, getUsers, deleteUser, updateUser };
->>>>>>> 42497444c3dfa972ccb0e3bbcafe0428cec6335a:server/src/controllers/adminController.js
