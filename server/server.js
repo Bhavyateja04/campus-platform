@@ -1,54 +1,44 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("./src/config/db");
+
+// Load environment variables first before anything else
 dotenv.config();
 
 const app = express();
 
+// Database connection
 connectDB();
 
+// Body parser middleware
 app.use(express.json());
 
-const authRoutes = require("./src/routes/authRoutes");
-
-app.use("/api/auth", authRoutes);
-
-// routes
-const userRoutes = require("./src/routes/UserRoutes");
-
-app.use("/api/users", userRoutes);
-
-
-//adminRoutes
-const adminRoutes = require("./src/routes/adminRoutes");
-
-app.use("/api/admin", adminRoutes);
-//lost items routes
-const lostRoutes = require("./src/routes/LostFoundRoutes");
-
-app.use("/api/lostitems", lostRoutes);
-//goods routes
-const goodsRoutes = require("./src/routes/GoodsRoutes");
-
-app.use("/api/goods",goodsRoutes);
-
-
-
-//collegeMemoriesRoutes
+// Routes
+const authRoutes            = require("./src/routes/authRoutes");
+const userRoutes            = require("./src/routes/UserRoutes");
+const adminRoutes           = require("./src/routes/adminRoutes");
+const lostRoutes            = require("./src/routes/LostFoundRoutes");
+const goodsRoutes           = require("./src/routes/GoodsRoutes");
 const collegeMemoriesRoutes = require("./src/routes/collegeMemoriesRoutes");
+const clubsRoutes           = require("./src/routes/clubsRoutes");
+const placementRoutes       = require("./src/routes/placementRoutes");
 
+app.use("/api/auth",             authRoutes);
+app.use("/api/users",            userRoutes);
+app.use("/api/admin",            adminRoutes);
+app.use("/api/lostitems",        lostRoutes);
+app.use("/api/goods",            goodsRoutes);
 app.use("/api/college-memories", collegeMemoriesRoutes);
+app.use("/api/clubs",            clubsRoutes);
+app.use("/api/placements",       placementRoutes);
 
-//clubsRoutes
-const clubsRoutes = require("./src/routes/clubsRoutes");
-app.use("/api/clubs", clubsRoutes);
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err.message);
+  res.status(500).json({ success: false, message: "Internal server error" });
+});
 
 const PORT = process.env.PORT || 5000;
-//placement routes
-const placementRoutes = require("./src/routes/placementRoutes");
-
-app.use("/api/placements", placementRoutes);
-
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
