@@ -234,7 +234,7 @@ This helps students quickly locate classrooms, labs, or offices.
 
 Students often spend time waiting in long queues at campus canteens.
 
-The application provides a **canteen ordering system** to reduce waiting time.
+The application provides a **canteen menu** to reduce waiting time.
 
 ## Features
 
@@ -242,7 +242,7 @@ Students can:
 
 - View menus from different canteens
 - Check prices
-- Pre-order food
+- Exit long queues
 
 ## Payment Options
 
