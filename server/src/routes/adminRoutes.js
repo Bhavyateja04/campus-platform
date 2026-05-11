@@ -5,22 +5,21 @@ const {
   createUser,
   getUsers,
   deleteUser,
-  updateUser
+  updateUser,
 } = require("../controllers/adminController");
-const protect = require("../middleware/adminMiddleware");
- const adminOnly = require("../middleware/authMiddleware");
+const protect = require("../middleware/authMiddleware");
+const adminOnly = require("../middleware/adminMiddleware");
 
-// CREATE USER
-router.post("/createuser", protect, adminOnly, createUser);
+// @route   POST    /api/admin/users
+router.post("/users", protect, adminOnly, createUser);
 
-// GET USERS
-router.get("/viewusers",protect, adminOnly, getUsers);
+// @route   GET     /api/admin/users
+router.get("/users", protect, adminOnly, getUsers);
 
-// UPDATE USER
-router.put("/users/:id", protect, adminOnly, updateUser);
+// @route   PATCH   /api/admin/users/:id
+router.patch("/users/:id", protect, adminOnly, updateUser);
 
-// DELETE USER
-router.delete("/deleteuser/:id", protect, adminOnly, deleteUser);
-
+// @route   DELETE  /api/admin/users/:id
+router.delete("/users/:id", protect, adminOnly, deleteUser);
 
 module.exports = router;
