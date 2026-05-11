@@ -1,126 +1,219 @@
 const Notification = require("../models/NotificationModel");
 const { emitRealtime } = require("../realtime");
 
-// GET /api/notifications  (auth)
-// Returns notifications visible to the current user, plus an `unread` flag.
-async function listNotifications(req, res) {
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+};
+
+const MESSAGES = {
+  NOTIFICATIONS_RETRIEVED: "Notifications retrieved",
+  NOTIFICATION_CREATED: "Notification created",
+  NOTIFICATION_MARKED_READ: "Notification marked read",
+  ALL_NOTIFICATIONS_MARKED_READ: "All notifications marked read",
+  NOTIFICATION_DELETED: "Notification deleted",
+  NOTIFICATION_NOT_FOUND: "Notification not found",
+  MISSING_FIELDS: "title and body are required",
+  ERROR_RETRIEVING: "Error retrieving notifications",
+  ERROR_CREATING: "Error creating notification",
+  ERROR_MARKING_READ: "Error marking notification read",
+  ERROR_MARKING_ALL_READ: "Error marking all read",
+  ERROR_DELETING: "Error deleting notification",
+};
+
+const REALTIME_EVENTS = {
+  NOTIFICATIONS_CHANGED: "notifications:changed",
+};
+
+const NOTIFICATION_DEFAULTS = {
+  TYPE: "System",
+  ICON: "notifications-outline",
+  COLOR: "#4A6FA5",
+  AUDIENCE: "all",
+  LIST_LIMIT: 200,
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const sendSuccess = (res, statusCode, data = {}) => {
+  res.status(statusCode).json({ success: true, ...data });
+};
+
+const sendError = (res, statusCode, message) => {
+  res.status(statusCode).json({ success: false, message });
+};
+
+const buildAudienceQuery = (userId) => ({
+  $or: [
+    { audience: "all" },
+    { audience: "user", audienceUserId: userId },
+  ],
+});
+
+const hasUserRead = (notification, userId) => {
+  return notification.readBy.some((u) => String(u) === String(userId));
+};
+
+const formatNotification = (notification, userId) => ({
+  id: String(notification._id),
+  title: notification.title,
+  body: notification.body,
+  type: notification.type,
+  icon: notification.icon,
+  color: notification.color,
+  createdAt: notification.createdAt,
+  unread: !hasUserRead(notification, userId),
+});
+
+const emitNotificationEvent = (action, payload = {}) => {
+  emitRealtime(REALTIME_EVENTS.NOTIFICATIONS_CHANGED, { action, ...payload });
+};
+
+// ─── Controllers ──────────────────────────────────────────────────────────────
+
+/**
+ * @desc    List notifications for the current user
+ * @route   GET /api/notifications
+ * @access  Private
+ */
+const listNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
-    const items = await Notification.find({
-      $or: [{ audience: "all" }, { audience: "user", audienceUserId: userId }],
-    })
+
+    const notifications = await Notification
+      .find(buildAudienceQuery(userId))
       .sort({ createdAt: -1 })
-      .limit(200);
+      .limit(NOTIFICATION_DEFAULTS.LIST_LIMIT);
 
-    const data = items.map((n) => ({
-      id: String(n._id),
-      title: n.title,
-      body: n.body,
-      type: n.type,
-      icon: n.icon,
-      color: n.color,
-      createdAt: n.createdAt,
-      unread: !n.readBy.some((u) => String(u) === String(userId)),
-    }));
+    const data = notifications.map((n) => formatNotification(n, userId));
 
-    res.json({ message: "Notifications retrieved", data });
+    sendSuccess(res, HTTP_STATUS.OK, {
+      message: MESSAGES.NOTIFICATIONS_RETRIEVED,
+      data,
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error retrieving notifications" });
+    console.error("listNotifications error:", error);
+    sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, MESSAGES.ERROR_RETRIEVING);
   }
-}
+};
 
-// POST /api/notifications  (admin)
-async function createNotification(req, res) {
+/**
+ * @desc    Create a new notification
+ * @route   POST /api/notifications
+ * @access  Admin
+ */
+const createNotification = async (req, res) => {
   try {
-    const { title, body, type, icon, color, audience, audienceUserId } =
-      req.body || {};
+    const { title, body, type, icon, color, audience, audienceUserId } = req.body || {};
+
     if (!title || !body) {
-      return res.status(400).json({ message: "title and body are required" });
+      return sendError(res, HTTP_STATUS.BAD_REQUEST, MESSAGES.MISSING_FIELDS);
     }
-    const created = await Notification.create({
+
+    const notification = await Notification.create({
       title,
       body,
-      type: type || "System",
-      icon: icon || "notifications-outline",
-      color: color || "#4A6FA5",
-      audience: audience || "all",
-      audienceUserId: audience === "user" ? audienceUserId : undefined,
+      type:            type     || NOTIFICATION_DEFAULTS.TYPE,
+      icon:            icon     || NOTIFICATION_DEFAULTS.ICON,
+      color:           color    || NOTIFICATION_DEFAULTS.COLOR,
+      audience:        audience || NOTIFICATION_DEFAULTS.AUDIENCE,
+      audienceUserId:  audience === "user" ? audienceUserId : undefined,
     });
-    emitRealtime("notifications:changed", {
-      action: "created",
-      notification: created,
-    });
-    res.status(201).json({ message: "Notification created", data: created });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error creating notification" });
-  }
-}
 
-// PUT /api/notifications/:id/read  (auth)
-async function markRead(req, res) {
+    emitNotificationEvent("created", { notification });
+
+    sendSuccess(res, HTTP_STATUS.CREATED, {
+      message: MESSAGES.NOTIFICATION_CREATED,
+      data: notification,
+    });
+  } catch (error) {
+    console.error("createNotification error:", error);
+    sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, MESSAGES.ERROR_CREATING);
+  }
+};
+
+/**
+ * @desc    Mark a single notification as read
+ * @route   PUT /api/notifications/:id/read
+ * @access  Private
+ */
+const markRead = async (req, res) => {
   try {
     const userId = req.user.id;
-    const n = await Notification.findById(req.params.id);
-    if (!n) return res.status(404).json({ message: "Notification not found" });
+    const notification = await Notification.findById(req.params.id);
 
-    if (!n.readBy.some((u) => String(u) === String(userId))) {
-      n.readBy.push(userId);
-      await n.save();
-      emitRealtime("notifications:changed", {
-        action: "read",
-        notificationId: String(n._id),
+    if (!notification) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, MESSAGES.NOTIFICATION_NOT_FOUND);
+    }
+
+    if (!hasUserRead(notification, userId)) {
+      notification.readBy.push(userId);
+      await notification.save();
+
+      emitNotificationEvent("read", {
+        notificationId: String(notification._id),
         userId,
       });
     }
-    res.json({ message: "Notification marked read" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error marking notification read" });
-  }
-}
 
-// PUT /api/notifications/read-all  (auth)
-async function markAllRead(req, res) {
+    sendSuccess(res, HTTP_STATUS.OK, { message: MESSAGES.NOTIFICATION_MARKED_READ });
+  } catch (error) {
+    console.error("markRead error:", error);
+    sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, MESSAGES.ERROR_MARKING_READ);
+  }
+};
+
+/**
+ * @desc    Mark all notifications as read for the current user
+ * @route   PUT /api/notifications/read-all
+ * @access  Private
+ */
+const markAllRead = async (req, res) => {
   try {
     const userId = req.user.id;
+
     await Notification.updateMany(
-      {
-        $or: [
-          { audience: "all" },
-          { audience: "user", audienceUserId: userId },
-        ],
-        readBy: { $ne: userId },
-      },
+      { ...buildAudienceQuery(userId), readBy: { $ne: userId } },
       { $addToSet: { readBy: userId } },
     );
-    emitRealtime("notifications:changed", {
-      action: "read-all",
-      userId,
-    });
-    res.json({ message: "All notifications marked read" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error marking all read" });
-  }
-}
 
-// DELETE /api/notifications/:id  (admin)
-async function removeNotification(req, res) {
-  try {
-    const n = await Notification.findByIdAndDelete(req.params.id);
-    if (!n) return res.status(404).json({ message: "Notification not found" });
-    emitRealtime("notifications:changed", {
-      action: "deleted",
-      notificationId: String(n._id),
-    });
-    res.json({ message: "Notification deleted" });
+    emitNotificationEvent("read-all", { userId });
+
+    sendSuccess(res, HTTP_STATUS.OK, { message: MESSAGES.ALL_NOTIFICATIONS_MARKED_READ });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error deleting notification" });
+    console.error("markAllRead error:", error);
+    sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, MESSAGES.ERROR_MARKING_ALL_READ);
   }
-}
+};
+
+/**
+ * @desc    Delete a notification by ID
+ * @route   DELETE /api/notifications/:id
+ * @access  Admin
+ */
+const removeNotification = async (req, res) => {
+  try {
+    const notification = await Notification.findByIdAndDelete(req.params.id);
+
+    if (!notification) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, MESSAGES.NOTIFICATION_NOT_FOUND);
+    }
+
+    emitNotificationEvent("deleted", { notificationId: String(notification._id) });
+
+    sendSuccess(res, HTTP_STATUS.OK, { message: MESSAGES.NOTIFICATION_DELETED });
+  } catch (error) {
+    console.error("removeNotification error:", error);
+    sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, MESSAGES.ERROR_DELETING);
+  }
+};
+
+// ─── Exports ──────────────────────────────────────────────────────────────────
 
 module.exports = {
   listNotifications,
