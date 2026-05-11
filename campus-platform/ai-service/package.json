@@ -1,0 +1,31 @@
+{
+  "name": "ai-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/vision": "^5.3.4",
+    "@tensorflow-models/mobilenet": "^2.1.1",
+    "@tensorflow-models/toxicity": "^1.2.2",
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-converter": "^4.22.0",
+    "axios": "^1.13.6",
+    "canvas": "^3.2.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "form-data": "^4.0.5",
+    "franc": "^5.0.0",
+    "langs": "^2.0.0",
+    "languagedetect": "^2.0.0",
+    "multer": "^2.1.1",
+    "tesseract.js": "^7.0.0"
+  }
+}
