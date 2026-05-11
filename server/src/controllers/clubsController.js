@@ -1,83 +1,110 @@
-const clubs = require("../models/ClubsModel");
+const Club = require("../models/ClubsModel");
 
+// @desc    Add a new club
+// @route   POST /api/clubs
 const addClub = async (req, res) => {
-    try {
-        const { name, description, coordinatorName, coordinatorEmail, mobileNumber } = req.body;
-        const newClub = await clubs.create({
-            name: name,
-            description: description,
-            coordinatorName: coordinatorName,
-            coordinatorEmail: coordinatorEmail,
-            mobileNumber: mobileNumber
-        });
-        res.status(201).json({ message: 'Club added successfully', club: newClub });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error adding club' });
-    }
+  try {
+    const { name, description, coordinatorName, coordinatorEmail, mobileNumber } = req.body;
+
+    const club = await Club.create({
+      name,
+      description,
+      coordinatorName,
+      coordinatorEmail,
+      mobileNumber,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Club added successfully",
+      data: club,
+    });
+  } catch (error) {
+    console.error("addClub error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 };
 
+// @desc    Get all clubs
+// @route   GET /api/clubs
 const getClubs = async (req, res) => {
-    try {
-        const allClubs = await clubs.find();
-        res.status(200).json(allClubs);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error fetching clubs' });
-    }
+  try {
+    const clubs = await Club.find();
+
+    res.status(200).json({
+      success: true,
+      count: clubs.length,
+      data: clubs,
+    });
+  } catch (error) {
+    console.error("getClubs error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 };
 
+// @desc    Get a single club by ID
+// @route   GET /api/clubs/:clubId
 const getClubById = async (req, res) => {
-    try {
-        const { clubId } = req.params;
-        const club = await clubs.findById(clubId);
-        if (!club) {
-            return res.status(404).json({ message: 'Club not found' });
-        }
-        res.status(200).json(club);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error fetching club' });
+  try {
+    const club = await Club.findById(req.params.clubId);
+
+    if (!club) {
+      return res.status(404).json({ success: false, message: "Club not found" });
     }
+
+    res.status(200).json({ success: true, data: club });
+  } catch (error) {
+    console.error("getClubById error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 };
 
+// @desc    Update a club by ID
+// @route   PUT /api/clubs/:clubId
 const updateClub = async (req, res) => {
-    try {
-        const { clubId } = req.params;
-        const { name, description, coordinatorName, coordinatorEmail, mobileNumber } = req.body;
-        const updatedClub = await clubs.findByIdAndUpdate(
-            clubId,
-            { name, description, coordinatorName, coordinatorEmail, mobileNumber },
-            { new: true }
-        );
-        if (!updatedClub) {
-            return res.status(404).json({ message: 'Club not found' });
-        }
-        res.status(200).json({ message: 'Club updated successfully', club: updatedClub });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error updating club' });
+  try {
+    const { name, description, coordinatorName, coordinatorEmail, mobileNumber } = req.body;
+
+    const updatedClub = await Club.findByIdAndUpdate(
+      req.params.clubId,
+      { name, description, coordinatorName, coordinatorEmail, mobileNumber },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedClub) {
+      return res.status(404).json({ success: false, message: "Club not found" });
     }
+
+    res.status(200).json({
+      success: true,
+      message: "Club updated successfully",
+      data: updatedClub,
+    });
+  } catch (error) {
+    console.error("updateClub error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 };
 
+// @desc    Delete a club by ID
+// @route   DELETE /api/clubs/:clubId
 const deleteClub = async (req, res) => {
-    try {
-        const { clubId } = req.params;
-        const deletedClub = await clubs.findByIdAndDelete(clubId);
-        if (!deletedClub) {
-            return res.status(404).json({ message: 'Club not found' });
-        }
-        res.status(200).json({ message: 'Club deleted successfully', club: deletedClub });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error deleting club' });
-    }
-};  
+  try {
+    const deletedClub = await Club.findByIdAndDelete(req.params.clubId);
 
-module.exports = {
-    addClub,
-    getClubs,
-    getClubById,
-    updateClub,
-    deleteClub
+    if (!deletedClub) {
+      return res.status(404).json({ success: false, message: "Club not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Club deleted successfully",
+      data: deletedClub,
+    });
+  } catch (error) {
+    console.error("deleteClub error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 };
+
+module.exports = { addClub, getClubs, getClubById, updateClub, deleteClub };
