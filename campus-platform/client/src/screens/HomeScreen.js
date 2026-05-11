@@ -22,7 +22,7 @@ import {
   memoriesApi,
 } from "../services/api";
 import { getSocket } from "../services/realtime";
-
+import FindLocationScreen from "./FindLocationScreen";
 const { width } = Dimensions.get("window");
 
 const C = {
@@ -594,7 +594,7 @@ export default function HomeScreen({ navigation }) {
           <View style={[S.sec, { paddingHorizontal: 16 }]}>
             <TouchableOpacity
               activeOpacity={0.84}
-              onPress={() => navigation?.navigate("CampusMap")}
+              onPress={() => navigation?.navigate("FindLocationScreen")}
             >
               <LinearGradient
                 colors={[C.primaryDark, C.primary]}
