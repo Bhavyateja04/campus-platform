@@ -1,12 +1,27 @@
 const express = require("express");
 const router = express.Router();
 
-const { addClub, getClubs, getClubById, updateClub, deleteClub } = require("../controllers/clubsController");
+const {
+  addClub,
+  getClubs,
+  getClubById,
+  updateClub,
+  deleteClub,
+} = require("../controllers/clubsController");
 
-router.post("/add-club", addClub);
-router.get("/all-clubs", getClubs);
-router.get("/club/:clubId", getClubById);
-router.put("/edit-club/:clubId", updateClub);
-router.delete("/delete-club/:clubId", deleteClub);
+// @route   POST    /api/clubs
+router.post("/", addClub);
+
+// @route   GET     /api/clubs
+router.get("/", getClubs);
+
+// @route   GET     /api/clubs/:clubId
+router.get("/:clubId", getClubById);
+
+// @route   PATCH   /api/clubs/:clubId
+router.patch("/:clubId", updateClub);
+
+// @route   DELETE  /api/clubs/:clubId
+router.delete("/:clubId", deleteClub);
 
 module.exports = router;

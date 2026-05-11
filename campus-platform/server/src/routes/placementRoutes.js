@@ -1,11 +1,25 @@
 const express = require("express");
 const router = express.Router();
-const { createPlacementItem, updateItem, viewItems, deleteItem } = require("../controllers/PlacementController");
+
+const {
+  createPlacementItem,
+  updateItem,
+  viewItems,
+  deleteItem,
+} = require("../controllers/PlacementController");
 const protect = require("../middleware/authMiddleware");
 const adminOnly = require("../middleware/adminMiddleware");
-router.post("/createitem", protect, createPlacementItem);
-router.get  ("/viewitems", protect, viewItems);
-router.put ("/updateitem/:id", protect,updateItem);
-router.delete("/deleteitem/:id", protect, adminOnly, deleteItem);
+
+// @route   POST    /api/placements
+router.post("/", protect, createPlacementItem);
+
+// @route   GET     /api/placements
+router.get("/", protect, viewItems);
+
+// @route   PATCH   /api/placements/:id
+router.patch("/:id", protect, updateItem);
+
+// @route   DELETE  /api/placements/:id  (admin only)
+router.delete("/:id", protect, adminOnly, deleteItem);
 
 module.exports = router;

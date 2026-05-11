@@ -1,55 +1,68 @@
 const mongoose = require("mongoose");
 
-const LostItemSchema = new mongoose.Schema({
-  itemName: {
-    type: String,
-    required: true
-  },
+const LostItemSchema = new mongoose.Schema(
+  {
+    itemName: {
+      type: String,
+      required: [true, "Item name is required"],
+      trim: true,
+    },
+    description: {
+      type: String,
+      trim: true,
+    },
+    imageUrl: {
+      type: String,
+      trim: true,
+    },
+    location: {
+      type: String,
+      trim: true,
+    },
+    dateLost: {
+      type: Date,
+    },
+    contactNumber: {
+      type: String,
+      trim: true,
+      match: [/^\d{10}$/, "Contact number must be exactly 10 digits"],
+    },
+    status: {
+      type: String,
+      enum: {
+        values: ["lost", "found", "resolved"],
+        message: "Status must be one of: lost, found, resolved",
+      },
+      default: "lost",
+    },
 
-  description: {
-    type: String
-  },
+    // User who reported the lost item
+    postedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "Posted by user is required"],
+    },
 
-  imageUrl: {
-    type: String
+    // Filled when someone finds the item (status → "found")
+    foundBy: {
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      rollNumber: {
+        type: String,
+        trim: true,
+      },
+      contactNumber: {
+        type: String,
+        trim: true,
+        match: [/^\d{10}$/, "Finder contact number must be exactly 10 digits"],
+      },
+    },
   },
-
-  location: {
-    type: String
-  },
-
-  dateLost: {
-    type: Date
-  },
-
-  contactNumber: {
-    type: String
-  },
-
-  status: {
-    type: String,
-    enum: ["lost", "found", "resolved"],
-    default: "lost"
-  },
-
-  postedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-  },
-
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  foundId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-  },
-  foundNumber: {
-    type:Number
+  {
+    timestamps: true, // Auto-manages createdAt & updatedAt
   }
-
-});
+);
 
 module.exports = mongoose.model("LostItem", LostItemSchema);
-//found by details roll number or user ID and then update the status to found and then after that if the person who lost the item finds it then update the status to resolved

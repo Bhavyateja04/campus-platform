@@ -3,14 +3,21 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const http = require("http");
 const connectDB = require("./src/config/db");
+<<<<<<< HEAD:campus-platform/server/server.js
 const { initRealtime } = require("./src/realtime");
+=======
+
+// Load environment variables first before anything else
+>>>>>>> 42497444c3dfa972ccb0e3bbcafe0428cec6335a:server/server.js
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
 
+// Database connection
 connectDB();
 
+<<<<<<< HEAD:campus-platform/server/server.js
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
@@ -37,14 +44,37 @@ const goodsRoutes = require("./src/routes/GoodsRoutes");
 app.use("/api/goods", goodsRoutes);
 
 //collegeMemoriesRoutes
+=======
+// Body parser middleware
+app.use(express.json());
+
+// Routes
+const authRoutes            = require("./src/routes/authRoutes");
+const userRoutes            = require("./src/routes/UserRoutes");
+const adminRoutes           = require("./src/routes/adminRoutes");
+const lostRoutes            = require("./src/routes/LostFoundRoutes");
+const goodsRoutes           = require("./src/routes/GoodsRoutes");
+>>>>>>> 42497444c3dfa972ccb0e3bbcafe0428cec6335a:server/server.js
 const collegeMemoriesRoutes = require("./src/routes/collegeMemoriesRoutes");
+const clubsRoutes           = require("./src/routes/clubsRoutes");
+const placementRoutes       = require("./src/routes/placementRoutes");
 
+app.use("/api/auth",             authRoutes);
+app.use("/api/users",            userRoutes);
+app.use("/api/admin",            adminRoutes);
+app.use("/api/lostitems",        lostRoutes);
+app.use("/api/goods",            goodsRoutes);
 app.use("/api/college-memories", collegeMemoriesRoutes);
+app.use("/api/clubs",            clubsRoutes);
+app.use("/api/placements",       placementRoutes);
 
-//clubsRoutes
-const clubsRoutes = require("./src/routes/clubsRoutes");
-app.use("/api/clubs", clubsRoutes);
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err.message);
+  res.status(500).json({ success: false, message: "Internal server error" });
+});
 
+<<<<<<< HEAD:campus-platform/server/server.js
 //placement routes
 const placementRoutes = require("./src/routes/placementRoutes");
 app.use("/api/placements", placementRoutes);
@@ -76,5 +106,9 @@ const PORT = process.env.PORT || 5000;
 initRealtime(server);
 
 server.listen(PORT, () => {
+=======
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+>>>>>>> 42497444c3dfa972ccb0e3bbcafe0428cec6335a:server/server.js
   console.log(`Server running on port ${PORT}`);
 });
