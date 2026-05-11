@@ -1,87 +1,162 @@
-const memories = require('../models/MemoriesModel');
+const Memory = require("../models/MemoriesModel");
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+};
+
+const MESSAGES = {
+  MEMORY_ADDED: "Memory added successfully",
+  MEMORY_UPDATED: "Memory updated successfully",
+  MEMORY_DELETED: "Memory deleted successfully",
+  MEMORY_NOT_FOUND: "Memory not found",
+  MISSING_FIELDS: "Title and description are required",
+  UNAUTHORIZED_UPDATE: "Unauthorized to update this memory",
+  UNAUTHORIZED_DELETE: "Unauthorized to delete this memory",
+  ERROR_ADDING: "Error adding memory",
+  ERROR_FETCHING: "Error fetching memories",
+  ERROR_UPDATING: "Error updating memory",
+  ERROR_DELETING: "Error deleting memory",
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const sendSuccess = (res, statusCode, data = {}) => {
+  res.status(statusCode).json({ success: true, ...data });
+};
+
+const sendError = (res, statusCode, message) => {
+  res.status(statusCode).json({ success: false, message });
+};
+
+const isOwner = (memory, userId) => {
+  return memory.authorId.toString() === userId;
+};
+
+const applyMemoryUpdates = (memory, { title, description, imageUrl }) => {
+  if (title !== undefined)       memory.title = title;
+  if (description !== undefined) memory.description = description;
+  if (imageUrl !== undefined)    memory.imageUrl = imageUrl;
+};
+
+// ─── Controller ───────────────────────────────────────────────────────────────
+
+/**
+ * @desc    Add a new memory
+ * @route   POST /api/memories
+ * @access  Private
+ */
 const addMemory = async (req, res) => {
-    try {
-        const { title, description, imageUrl } = req.body || {};
-        if (!title || !description) {
-            return res.status(400).json({ message: 'title and description are required' });
-        }
+  try {
+    const { title, description, imageUrl } = req.body || {};
 
-        const newMemory = await memories.create({
-            title,
-            description,
-            imageUrl,
-            authorId: req.user.id,
-        });
-
-        res.status(201).json({ message: 'Memory added successfully', memory: newMemory });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error adding memory' });
+    if (!title || !description) {
+      return sendError(res, HTTP_STATUS.BAD_REQUEST, MESSAGES.MISSING_FIELDS);
     }
+
+    const newMemory = await Memory.create({
+      title,
+      description,
+      imageUrl,
+      authorId: req.user.id,
+    });
+
+    sendSuccess(res, HTTP_STATUS.CREATED, {
+      message: MESSAGES.MEMORY_ADDED,
+      data: newMemory,
+    });
+  } catch (error) {
+    console.error("addMemory error:", error);
+    sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, MESSAGES.ERROR_ADDING);
+  }
 };
 
+/**
+ * @desc    Get all memories
+ * @route   GET /api/memories
+ * @access  Public
+ */
 const getMemories = async (_req, res) => {
-    try {
-        const allMemories = await memories
-            .find()
-            .sort({ createdAt: -1 })
-            .populate('authorId', 'name rollNumber');
-        res.status(200).json(allMemories);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error fetching memories' });
-    }
+  try {
+    const allMemories = await Memory
+      .find()
+      .sort({ createdAt: -1 })
+      .populate("authorId", "name rollNumber");
+
+    sendSuccess(res, HTTP_STATUS.OK, {
+      count: allMemories.length,
+      data: allMemories,
+    });
+  } catch (error) {
+    console.error("getMemories error:", error);
+    sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, MESSAGES.ERROR_FETCHING);
+  }
 };
 
+/**
+ * @desc    Edit a memory by ID
+ * @route   PUT /api/memories/:memoryId
+ * @access  Private (owner only)
+ */
 const editMemory = async (req, res) => {
-    try {
-        const { memoryId } = req.params;
-        const { title, description, imageUrl } = req.body || {};
+  try {
+    const { memoryId } = req.params;
+    const memory = await Memory.findById(memoryId);
 
-        const memory = await memories.findById(memoryId);
-        if (!memory) {
-            return res.status(404).json({ message: 'Memory not found' });
-        }
-        if (memory.authorId.toString() !== req.user.id) {
-            return res.status(403).json({ message: 'Unauthorized to update this memory' });
-        }
-
-        if (title !== undefined) memory.title = title;
-        if (description !== undefined) memory.description = description;
-        if (imageUrl !== undefined) memory.imageUrl = imageUrl;
-        await memory.save();
-
-        res.status(200).json({ message: 'Memory updated successfully', memory });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error updating memory' });
+    if (!memory) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, MESSAGES.MEMORY_NOT_FOUND);
     }
+
+    if (!isOwner(memory, req.user.id)) {
+      return sendError(res, HTTP_STATUS.FORBIDDEN, MESSAGES.UNAUTHORIZED_UPDATE);
+    }
+
+    applyMemoryUpdates(memory, req.body || {});
+    await memory.save();
+
+    sendSuccess(res, HTTP_STATUS.OK, {
+      message: MESSAGES.MEMORY_UPDATED,
+      data: memory,
+    });
+  } catch (error) {
+    console.error("editMemory error:", error);
+    sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, MESSAGES.ERROR_UPDATING);
+  }
 };
 
+/**
+ * @desc    Delete a memory by ID
+ * @route   DELETE /api/memories/:memoryId
+ * @access  Private (owner only)
+ */
 const deleteMemory = async (req, res) => {
-    try {
-        const { memoryId } = req.params;
+  try {
+    const { memoryId } = req.params;
+    const memory = await Memory.findById(memoryId);
 
-        const memory = await memories.findById(memoryId);
-        if (!memory) {
-            return res.status(404).json({ message: 'Memory not found' });
-        }
-        if (memory.authorId.toString() !== req.user.id) {
-            return res.status(403).json({ message: 'Unauthorized to delete this memory' });
-        }
-        await memory.deleteOne();
-
-        res.status(200).json({ message: 'Memory deleted successfully' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error deleting memory' });
+    if (!memory) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, MESSAGES.MEMORY_NOT_FOUND);
     }
+
+    if (!isOwner(memory, req.user.id)) {
+      return sendError(res, HTTP_STATUS.FORBIDDEN, MESSAGES.UNAUTHORIZED_DELETE);
+    }
+
+    await memory.deleteOne();
+
+    sendSuccess(res, HTTP_STATUS.OK, { message: MESSAGES.MEMORY_DELETED });
+  } catch (error) {
+    console.error("deleteMemory error:", error);
+    sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, MESSAGES.ERROR_DELETING);
+  }
 };
 
-module.exports = {
-    addMemory,
-    getMemories,
-    editMemory,
-    deleteMemory,
-};
+// ─── Exports ──────────────────────────────────────────────────────────────────
+
+module.exports = { addMemory, getMemories, editMemory, deleteMemory };
