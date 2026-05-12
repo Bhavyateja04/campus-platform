@@ -1,5 +1,5 @@
 const express = require("express");
-const router = express.Router();
+const router  = express.Router();
 
 const {
   addCanteen,
@@ -9,19 +9,14 @@ const {
   deleteCanteen,
 } = require("../controllers/canteensController");
 
-// @route   POST    /api/canteens
-router.post("/", addCanteen);
+// ─── Routes ───────────────────────────────────────────────────────────────────
 
-// @route   GET     /api/canteens
-router.get("/", getCanteens);
+router.post  ("/",            addCanteen);
+router.get   ("/",            getCanteens);
+router.get   ("/:canteenId",  getCanteenById);
+router.patch ("/:canteenId",  updateCanteen);
+router.delete("/:canteenId",  deleteCanteen);
 
-// @route   GET     /api/canteens/:canteenId
-router.get("/:canteenId", getCanteenById);
-
-// @route   PATCH   /api/canteens/:canteenId
-router.patch("/:canteenId", updateCanteen);
-
-// @route   DELETE  /api/canteens/:canteenId
-router.delete("/:canteenId", deleteCanteen);
+// ─── Export ───────────────────────────────────────────────────────────────────
 
 module.exports = router;
