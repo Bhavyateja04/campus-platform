@@ -1,18 +1,4 @@
-/**
- * HomeScreen.jsx
- *
- * Root landing screen for the Campix app. Displays a hero section with live
- * aggregate stats, a grid of core feature shortcuts, an "About the College"
- * tile, student reviews, and a sticky bottom navigation bar.
- *
- * Data sources
- * ─────────────
- * • User name   — persisted via getUser()
- * • Unread count — notificationsApi.list() + real-time socket events
- * • Stats strip  — lostFoundApi, memoriesApi, clubsApi (Promise.allSettled)
- */
-
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -25,225 +11,274 @@ import {
   Easing,
   Platform,
   ImageBackground,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-
+  Alert,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import {
   getUser,
   notificationsApi,
   clubsApi,
   lostFoundApi,
   memoriesApi,
-} from '../services/api';
-import { getSocket } from '../services/realtime';
+} from "../services/api";
+import { getSocket } from "../services/realtime";
+import { isGuestMode, exitGuestMode, isFeatureAllowedForGuest } from "../utils/guestMode";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import FindLocationScreen from "./FindLocationScreen";
+const { width } = Dimensions.get("window");
 
-// ─── CONSTANTS ────────────────────────────────────────────────────────────────
-
-const { width } = Dimensions.get('window');
-
-/** Shared colour palette. */
-const COLORS = {
-  primary:      '#4A6FA5',
-  primaryDark:  '#2E4D7A',
-  primaryLight: '#A8C0DD',
-  primaryPale:  '#EBF1F8',
-  bg:           '#F5F8FC',
-  surface:      '#FFFFFF',
-  textDark:     '#0D1B2A',
-  textMid:      '#3D5068',
-  textLight:    '#8FA8C0',
-  border:       '#D6E4F0',
-  gold:         '#FFB300',
+const C = {
+  primary: "#4A6FA5",
+  primaryDark: "#2E4D7A",
+  primaryLight: "#A8C0DD",
+  primaryPale: "#EBF1F8",
+  orange: "#E07B3A",
+  blue: "#1565C0",
+  purple: "#6A1B9A",
+  teal: "#00796B",
+  gold: "#FFB300",
+  red: "#DC2626",
+  bg: "#F5F8FC",
+  surface: "#FFFFFF",
+  textDark: "#0D1B2A",
+  textMid: "#3D5068",
+  textLight: "#8FA8C0",
+  border: "#D6E4F0",
 };
 
-/**
- * Feature-grid layout metrics.
- * All four cards in each row share an identical fixed width so no rounding
- * differences can cause misalignment across devices.
- */
-const GRID_PAD  = 16;
-const GRID_GAP  = 8;
-const CARD_W    = Math.floor((width - GRID_PAD * 2 - GRID_GAP * 3) / 4);
-const ICON_SIZE = Math.floor(CARD_W * 0.54);
-const ICON_R    = Math.floor(ICON_SIZE * 0.3);
+// ── Feature card sizing — strict fixed values so every card is identical ──────
+const GRID_PAD = 16;
+const GRID_GAP = 8;
+// Force exact equal width for all 4 columns — no dynamic calc differences
+const CARD_W = Math.floor((width - GRID_PAD * 2 - GRID_GAP * 3) / 4);
+const ICON_SIZE = Math.floor(CARD_W * 0.54); // fixed icon box size
+const ICON_R = Math.floor(ICON_SIZE * 0.3);
 
-/** Smooth spring-like cubic-bezier reused for every animation. */
-const EASE_OUT_EXPO = Easing.bezier(0.22, 1, 0.36, 1);
-
-const COLLEGE_IMAGE = require('../../assets/droneviewaditya.jpg');
-
-// ─── DATA ─────────────────────────────────────────────────────────────────────
-
-/**
- * Core feature shortcuts rendered in the 4-column grid.
- * `route` maps directly to a React Navigation screen name.
- */
 const FEATURES = [
-  { id: '1', icon: 'search-outline',     label: 'Lost & Found',    grad: ['#1A237E', '#283593'], route: 'LostAndFound'    },
-  { id: '2', icon: 'map-outline',         label: 'Campus Map',      grad: ['#4A148C', '#7B1FA2'], route: 'CampusMap'       },
-  { id: '3', icon: 'restaurant-outline',  label: 'Canteen Menu',    grad: ['#BF360C', '#E64A19'], route: 'CanteenMenu'     },
-  { id: '4', icon: 'storefront-outline',  label: 'Campus Exchange', grad: ['#004D40', '#00695C'], route: 'Marketplace'     },
-  { id: '5', icon: 'briefcase-outline',   label: 'Placements',      grad: ['#0D47A1', '#1565C0'], route: 'Placements'      },
-  { id: '6', icon: 'navigate-outline',    label: 'Exam Hall',       grad: ['#1B5E20', '#2E7D32'], route: 'ExamHall'        },
-  { id: '7', icon: 'people-outline',      label: 'Clubs',           grad: ['#880E4F', '#AD1457'], route: 'Clubs'           },
-  { id: '8', icon: 'images-outline',      label: 'Campus\nMemories',grad: ['#006064', '#00838F'], route: 'CampusMemories'  },
-];
-
-/** Student reviews shown in the bottom section. */
-const REVIEWS = [
   {
-    id: '1',
-    name: 'Arjun Mehta',
-    role: 'CSE, 3rd Year',
-    initials: 'AM',
-    gradColors: ['#4A6FA5', '#2E4D7A'],
-    rating: 5,
-    review:
-      'Campix has completely transformed how I navigate campus life. Everything I need is in one place — clean, fast, and super useful!',
+    id: "1",
+    icon: "search-outline",
+    label: "Lost & Found",
+    grad: ["#1A237E", "#283593"],
+    route: "LostAndFound",
   },
   {
-    id: '2',
-    name: 'Sneha Reddy',
-    role: 'ECE, 2nd Year',
-    initials: 'SR',
-    gradColors: ['#00897B', '#00796B'],
-    rating: 5,
-    review:
-      'The best student app I have used. Beautiful UI and genuinely helpful features. Campix saves me at least 30 minutes every day!',
+    id: "2",
+    icon: "map-outline",
+    label: "Campus Map",
+    grad: ["#4A148C", "#7B1FA2"],
+    route: "CampusMap",
+  },
+  {
+    id: "3",
+    icon: "restaurant-outline",
+    label: "Canteen Menu",
+    grad: ["#BF360C", "#E64A19"],
+    route: "CanteenMenu",
+  },
+  {
+    id: "4",
+    icon: "storefront-outline",
+    label: "Campus Exchange",
+    grad: ["#004D40", "#00695C"],
+    route: "Marketplace",
+  },
+  {
+    id: "5",
+    icon: "briefcase-outline",
+    label: "Placements",
+    grad: ["#0D47A1", "#1565C0"],
+    route: "Placements",
+  },
+  {
+    id: "6",
+    icon: "navigate-outline",
+    label: "Exam Hall",
+    grad: ["#1B5E20", "#2E7D32"],
+    route: "ExamHall",
+  },
+  {
+    id: "7",
+    icon: "people-outline",
+    label: "Clubs",
+    grad: ["#880E4F", "#AD1457"],
+    route: "Clubs",
+  },
+  {
+    id: "8",
+    icon: "images-outline",
+    label: "Campus\nMemories",
+    grad: ["#006064", "#00838F"],
+    route: "CampusMemories",
   },
 ];
 
-/** Bottom navigation items. */
-const NAV_ITEMS = [
-  { key: 'Home',    icon: 'home',            label: 'Home'    },
-  { key: 'Alerts',  icon: 'notifications',   label: 'Alerts'  },
-  { key: 'About',   icon: 'school',          label: 'About'   },
-  { key: 'Profile', icon: 'person-circle',   label: 'Profile' },
+const FEEDBACK = [
+  {
+    id: "1",
+    name: "Arjun Mehta",
+    role: "CSE, 3rd Year",
+    initials: "AM",
+    gradColors: ["#4A6FA5", "#2E4D7A"],
+    rating: 5,
+    review:
+      "Campix has completely transformed how I navigate campus life. Everything I need is in one place — clean, fast, and super useful!",
+  },
+  {
+    id: "2",
+    name: "Sneha Reddy",
+    role: "ECE, 2nd Year",
+    initials: "SR",
+    gradColors: ["#00897B", "#00796B"],
+    rating: 5,
+    review:
+      "The best student app I have used. Beautiful UI and genuinely helpful features. Campix saves me at least 30 minutes every day!",
+  },
 ];
 
-// ─── HOOKS ────────────────────────────────────────────────────────────────────
+const NAV = [
+  { key: "Home", icon: "home", label: "Home" },
+  { key: "Alerts", icon: "notifications", label: "Alerts" },
+  { key: "About", icon: "school", label: "About" },
+  { key: "Profile", icon: "person-circle", label: "Profile" },
+];
 
-/**
- * Drives a fade-in + slide-up entrance animation.
- *
- * @param {number} delay         - Start delay in milliseconds.
- * @param {number} [slideDistance=24] - Vertical distance in pixels.
- */
-function useEntranceAnimation(delay = 0, slideDistance = 24) {
-  const opacity    = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(slideDistance)).current;
+const COLLEGE_IMG = require("../../assets/droneviewaditya.jpg");
+const EASE = Easing.bezier(0.22, 1, 0.36, 1);
 
+// ─── Hooks ────────────────────────────────────────────────────────────────────
+
+const useEntrance = (delay = 0, dy = 24) => {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(dy)).current;
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(opacity,    { toValue: 1, duration: 580, delay, easing: EASE_OUT_EXPO, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 580, delay, easing: EASE_OUT_EXPO, useNativeDriver: true }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 580,
+        delay,
+        easing: EASE,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 580,
+        delay,
+        easing: EASE,
+        useNativeDriver: true,
+      }),
     ]).start();
   }, []);
-
   return { opacity, transform: [{ translateY }] };
-}
+};
 
-// ─── SMALL COMPONENTS ─────────────────────────────────────────────────────────
+// ─── Small components ─────────────────────────────────────────────────────────
 
-/**
- * Animated pulsing badge showing the unread notification count.
- * Returns null when count is zero or undefined.
- *
- * @param {number} count - Number to display (capped at "9+").
- */
 const PulseBadge = ({ count }) => {
   const scale = useRef(new Animated.Value(1)).current;
-
   useEffect(() => {
     if (!count) return;
     Animated.loop(
       Animated.sequence([
-        Animated.timing(scale, { toValue: 1.35, duration: 800, easing: EASE_OUT_EXPO, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1,    duration: 800, easing: EASE_OUT_EXPO, useNativeDriver: true }),
+        Animated.timing(scale, {
+          toValue: 1.35,
+          duration: 800,
+          easing: EASE,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 800,
+          easing: EASE,
+          useNativeDriver: true,
+        }),
       ]),
     ).start();
   }, [count]);
-
   if (!count || count <= 0) return null;
-
   return (
-    <Animated.View style={[styles.badge, { transform: [{ scale }] }]}>
-      <Text style={styles.badgeText}>{count > 9 ? '9+' : String(count)}</Text>
+    <Animated.View style={[S.badge, { transform: [{ scale }] }]}>
+      <Text style={S.badgeText}>{count > 9 ? "9+" : String(count)}</Text>
     </Animated.View>
   );
 };
 
-/**
- * Row of five star icons reflecting a numeric rating.
- *
- * @param {number} count - Integer from 1 to 5.
- */
 const Stars = ({ count }) => (
-  <View style={{ flexDirection: 'row', gap: 2 }}>
+  <View style={{ flexDirection: "row", gap: 2 }}>
     {[1, 2, 3, 4, 5].map((i) => (
-      <Ionicons key={i} name={i <= count ? 'star' : 'star-outline'} size={12} color={COLORS.gold} />
+      <Ionicons
+        key={i}
+        name={i <= count ? "star" : "star-outline"}
+        size={12}
+        color={C.gold}
+      />
     ))}
   </View>
 );
 
-/**
- * Section heading with an optional "View All" link.
- *
- * @param {string}    title  - Heading text.
- * @param {Function}  [onMore] - Called when "View All" is pressed. Omit to hide.
- */
-const SectionHeader = ({ title, onMore }) => (
-  <View style={styles.sectionHeader}>
-    <Text style={styles.sectionTitle}>{title}</Text>
+const SecHeader = ({ title, onMore }) => (
+  <View style={S.secHeader}>
+    <Text style={S.secTitle}>{title}</Text>
     {onMore && (
-      <TouchableOpacity onPress={onMore} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-        <Text style={styles.sectionMoreLink}>View All ›</Text>
+      <TouchableOpacity
+        onPress={onMore}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Text style={S.secMore}>View All ›</Text>
       </TouchableOpacity>
     )}
   </View>
 );
 
-// ─── FEATURE CARD ─────────────────────────────────────────────────────────────
+// ─── FeatureCard — strict fixed size, no dynamic per-card variance ─────────────
 
-/**
- * Single cell in the core-features grid.
- * Uses a strictly fixed width so every card is identical regardless of content.
- *
- * @param {object}   item       - Feature descriptor from FEATURES.
- * @param {number}   delay      - Entrance animation delay in ms.
- * @param {object}   navigation - React Navigation prop.
- */
 const FeatureCard = ({ item, delay, navigation }) => {
-  const entranceStyle = useEntranceAnimation(delay, 18);
-  const pressScale    = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn  = () =>
-    Animated.spring(pressScale, { toValue: 0.93, speed: 22, bounciness: 4, useNativeDriver: true }).start();
-  const handlePressOut = () =>
-    Animated.spring(pressScale, { toValue: 1,    speed: 16, bounciness: 6, useNativeDriver: true }).start();
+  const anim = useEntrance(delay, 18);
+  const press = useRef(new Animated.Value(1)).current;
+  const onIn = () =>
+    Animated.spring(press, {
+      toValue: 0.93,
+      speed: 22,
+      bounciness: 4,
+      useNativeDriver: true,
+    }).start();
+  const onOut = () =>
+    Animated.spring(press, {
+      toValue: 1,
+      speed: 16,
+      bounciness: 6,
+      useNativeDriver: true,
+    }).start();
 
   return (
-    <Animated.View style={[entranceStyle, { transform: [...entranceStyle.transform, { scale: pressScale }] }]}>
+    <Animated.View
+      style={[anim, { transform: [...anim.transform, { scale: press }] }]}
+    >
       <TouchableOpacity
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        onPressIn={onIn}
+        onPressOut={onOut}
         activeOpacity={1}
         onPress={() => item.route && navigation?.navigate(item.route)}
-        style={featureCardStyles.card}
+        style={FC.card}
       >
+        {/* Gradient icon box — strictly fixed size */}
         <LinearGradient
           colors={item.grad}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={featureCardStyles.iconBox}
+          style={FC.iconBox}
         >
-          <Ionicons name={item.icon} size={Math.floor(ICON_SIZE * 0.46)} color="#fff" />
+          <Ionicons
+            name={item.icon}
+            size={Math.floor(ICON_SIZE * 0.46)}
+            color="#fff"
+          />
         </LinearGradient>
 
-        {/* Fixed-height label container keeps all rows aligned. */}
-        <View style={featureCardStyles.labelWrapper}>
-          <Text style={featureCardStyles.label} numberOfLines={2}>
+        {/* Label — fixed height container so rows align */}
+        <View style={FC.labelWrap}>
+          <Text style={FC.label} numberOfLines={2}>
             {item.label}
           </Text>
         </View>
@@ -252,155 +287,155 @@ const FeatureCard = ({ item, delay, navigation }) => {
   );
 };
 
-const featureCardStyles = StyleSheet.create({
+const FC = StyleSheet.create({
   card: {
-    width:             CARD_W,
-    height:            CARD_W + 36,
-    backgroundColor:   COLORS.surface,
-    borderRadius:      16,
-    paddingTop:        13,
-    paddingBottom:     10,
+    // Exact fixed width — prevents any flex rounding differences
+    width: CARD_W,
+    height: CARD_W + 36, // icon + label zone — uniform height
+    backgroundColor: C.surface,
+    borderRadius: 16,
+    paddingTop: 13,
+    paddingBottom: 10,
     paddingHorizontal: 4,
-    alignItems:        'center',
-    gap:               9,
-    shadowColor:       '#4A6FA530',
-    shadowOffset:      { width: 0, height: 3 },
-    shadowOpacity:     1,
-    shadowRadius:      8,
-    elevation:         3,
-    borderWidth:       1,
-    borderColor:       COLORS.border,
+    alignItems: "center",
+    gap: 9,
+    shadowColor: "#4A6FA530",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: C.border,
   },
   iconBox: {
-    width:           ICON_SIZE,
-    height:          ICON_SIZE,
-    borderRadius:    ICON_R,
-    justifyContent:  'center',
-    alignItems:      'center',
+    // Fixed size — identical for every card
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+    borderRadius: ICON_R,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  labelWrapper: {
-    height:          28,
-    justifyContent:  'center',
-    alignItems:      'center',
+  labelWrap: {
+    // Fixed height so text area never pushes card size
+    height: 28,
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 2,
   },
   label: {
-    color:         COLORS.textMid,
-    fontSize:      10.5,
-    fontWeight:    '700',
-    textAlign:     'center',
-    lineHeight:    14,
+    color: C.textMid,
+    fontSize: 10.5,
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: 14,
     letterSpacing: 0.1,
   },
 });
 
-// ─── REVIEW CARD ──────────────────────────────────────────────────────────────
+// ─── FeedbackCard ─────────────────────────────────────────────────────────────
 
-/**
- * Displays a single student review with avatar, rating, and quoted text.
- *
- * @param {{ id, name, role, initials, gradColors, rating, review }} item
- */
-const ReviewCard = ({ item }) => (
-  <View style={styles.reviewCard}>
-    <View style={styles.reviewHeader}>
-      <LinearGradient colors={item.gradColors} style={styles.reviewAvatar}>
-        <Text style={styles.reviewAvatarText}>{item.initials}</Text>
+const FeedbackCard = ({ item }) => (
+  <View style={S.fbCard}>
+    <View style={S.fbHeader}>
+      <LinearGradient colors={item.gradColors} style={S.fbAvatar}>
+        <Text style={S.fbAvatarT}>{item.initials}</Text>
       </LinearGradient>
       <View style={{ flex: 1 }}>
-        <Text style={styles.reviewName}>{item.name}</Text>
-        <Text style={styles.reviewRole}>{item.role}</Text>
+        <Text style={S.fbName}>{item.name}</Text>
+        <Text style={S.fbRole}>{item.role}</Text>
       </View>
       <Stars count={item.rating} />
     </View>
-    <Text style={styles.reviewText}>"{item.review}"</Text>
+    <Text style={S.fbText}>"{item.review}"</Text>
   </View>
 );
 
-// ─── HERO SECTION ─────────────────────────────────────────────────────────────
+// ─── Hero ─────────────────────────────────────────────────────────────────────
 
-/**
- * Full-bleed hero with a drone-view background image, animated welcome text,
- * and a stats strip at the bottom.
- *
- * @param {number}   statusBarHeight - Platform-specific status bar height.
- * @param {object}   navigation      - React Navigation prop.
- * @param {string}   userName        - First name of the logged-in student.
- * @param {number}   unreadCount     - Number of unread notifications.
- * @param {object}   stats           - { lostFound, memories, clubs } display strings.
- */
-const HeroSection = ({ statusBarHeight, navigation, userName, unreadCount, stats }) => {
-  const HERO_HEIGHT = 360 + statusBarHeight;
-
-  const logoAnim   = useEntranceAnimation(100, -12);
-  const greetAnim  = useEntranceAnimation(260, 14);
-  const nameAnim   = useEntranceAnimation(340, 14);
-  const pillAnim   = useEntranceAnimation(420, 12);
-  const statsAnim  = useEntranceAnimation(490, 10);
-
-  const [imageLoadError, setImageLoadError] = useState(false);
+const Hero = ({ SB_H, navigation, userName, unreadCount, stats }) => {
+  const HERO_H = 360 + SB_H;
+  const logoAnim = useEntrance(100, -12);
+  const greetAnim = useEntrance(260, 14);
+  const nameAnim = useEntrance(340, 14);
+  const pillAnim = useEntrance(420, 12);
+  const statsAnim = useEntrance(490, 10);
+  const [imgError, setImgError] = useState(false);
 
   return (
-    <View style={[styles.heroContainer, { height: HERO_HEIGHT }]}>
+    <View style={[S.heroContainer, { height: HERO_H }]}>
       <ImageBackground
-        source={COLLEGE_IMAGE}
+        source={COLLEGE_IMG}
         style={StyleSheet.absoluteFill}
-        imageStyle={{ width: '100%', height: '100%' }}
+        imageStyle={{ width: "100%", height: "100%" }}
         resizeMode="cover"
-        onError={() => setImageLoadError(true)}
+        onError={() => setImgError(true)}
       >
-        {imageLoadError && (
-          <LinearGradient colors={['#2E4D7A', '#4A6FA5']} style={StyleSheet.absoluteFill} />
+        {imgError && (
+          <LinearGradient
+            colors={["#2E4D7A", "#4A6FA5"]}
+            style={StyleSheet.absoluteFill}
+          />
         )}
       </ImageBackground>
 
-      {/* Gradient overlay — darkens toward the bottom for text legibility. */}
       <LinearGradient
-        colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0)', 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.80)']}
+        colors={[
+          "rgba(0,0,0,0)",
+          "rgba(0,0,0,0)",
+          "rgba(0,0,0,0.15)",
+          "rgba(0,0,0,0.55)",
+          "rgba(0,0,0,0.80)",
+        ]}
         locations={[0, 0.32, 0.52, 0.76, 1]}
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
 
-      {/* Top bar — logo + notification bell */}
-      <Animated.View style={[styles.heroBar, { top: statusBarHeight + 14 }, logoAnim]}>
-        <View style={styles.brandRow}>
-          <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} style={styles.brandIcon}>
+      <Animated.View style={[S.heroBar, { top: SB_H + 14 }, logoAnim]}>
+        <View style={S.brandRow}>
+          <LinearGradient
+            colors={[C.primary, C.primaryDark]}
+            style={S.brandIcon}
+          >
             <Ionicons name="school" size={17} color="#fff" />
           </LinearGradient>
           <View>
-            <Text style={styles.heroAppName}>Campix</Text>
-            <Text style={styles.heroUniversityName}>Aditya University</Text>
+            <Text style={S.heroApp}>Campix</Text>
+            <Text style={S.heroUni}>Aditya University</Text>
           </View>
         </View>
-
-        <TouchableOpacity style={styles.bellButton} onPress={() => navigation?.navigate('Alerts')}>
+        <TouchableOpacity
+          style={S.bellBtn}
+          onPress={() => navigation?.navigate("Alerts")}
+        >
           <Ionicons name="notifications-outline" size={20} color="#fff" />
           <PulseBadge count={unreadCount} />
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Welcome text block */}
-      <View style={styles.welcomeBlock}>
-        <Animated.Text style={[greetAnim, styles.heroGreeting]}>Welcome back,</Animated.Text>
-        <Animated.Text style={[nameAnim,  styles.heroName]}>{userName || 'Student'} 👋</Animated.Text>
-        <Animated.View style={[pillAnim,  styles.heroPill]}>
-          <Ionicons name="sparkles-outline" size={12} color={COLORS.primaryLight} />
-          <Text style={styles.heroPillText}>Smart Student App · Aditya University</Text>
+      <View style={S.welcomeBlock}>
+        <Animated.Text style={[greetAnim, S.heroHi]}>
+          Welcome back,
+        </Animated.Text>
+        <Animated.Text style={[nameAnim, S.heroName]}>
+          {isGuest ? "Welcome, Guest" : userName + " 👋"}
+        </Animated.Text>
+        <Animated.View style={[pillAnim, S.heroPill]}>
+          <Ionicons name="sparkles-outline" size={12} color={C.primaryLight} />
+          <Text style={S.heroPillT}>Smart Student App · Aditya University</Text>
         </Animated.View>
       </View>
 
-      {/* Stats strip at the bottom of the hero */}
-      <Animated.View style={[statsAnim, styles.statsStrip]}>
+      <Animated.View style={[statsAnim, S.statsStrip]}>
         {[
-          { value: stats.lostFound, label: 'Lost & Found', icon: 'search'  },
-          { value: stats.memories,  label: 'Memories',     icon: 'images'  },
-          { value: stats.clubs,     label: 'Clubs',        icon: 'trophy'  },
-        ].map((stat, index) => (
-          <View key={stat.label} style={[styles.statItem, index < 2 && styles.statItemBorder]}>
-            <Ionicons name={stat.icon} size={15} color="rgba(255,255,255,0.85)" />
-            <Text style={styles.statValue}>{stat.value}</Text>
-            <Text style={styles.statLabel}>{stat.label}</Text>
+          { val: stats.lostFound, label: "Lost & Found", icon: "search" },
+          { val: stats.memories, label: "Memories", icon: "images" },
+          { val: stats.clubs, label: "Clubs", icon: "trophy" },
+        ].map((s, i) => (
+          <View key={i} style={[S.statItem, i < 2 && S.statBorder]}>
+            <Ionicons name={s.icon} size={15} color="rgba(255,255,255,0.85)" />
+            <Text style={S.statVal}>{s.val}</Text>
+            <Text style={S.statLabel}>{s.label}</Text>
           </View>
         ))}
       </Animated.View>
@@ -408,133 +443,175 @@ const HeroSection = ({ statusBarHeight, navigation, userName, unreadCount, stats
   );
 };
 
-// ─── SCREEN ───────────────────────────────────────────────────────────────────
+// ─── HomeScreen ───────────────────────────────────────────────────────────────
 
-/**
- * HomeScreen
- *
- * @param {object} navigation - React Navigation prop.
- */
 export default function HomeScreen({ navigation }) {
-  const STATUS_BAR_HEIGHT = Platform.OS === 'ios' ? 44 : (StatusBar.currentHeight || 24);
-
   const scrollY = useRef(new Animated.Value(0)).current;
+  const SB_H = Platform.OS === "ios" ? 44 : StatusBar.currentHeight || 24;
 
-  const [userName,    setUserName]    = useState('Student');
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [stats,       setStats]       = useState({ lostFound: '—', memories: '—', clubs: '—' });
-
-  // Sticky header fades in as the hero scrolls out of view.
-  const stickyOpacity = scrollY.interpolate({
-    inputRange:  [0, 160],
+  const stickyOp = scrollY.interpolate({
+    inputRange: [0, 160],
     outputRange: [0, 1],
-    extrapolate: 'clamp',
+    extrapolate: "clamp",
   });
 
-  // Section entrance animations (staggered).
-  const mapBannerAnim  = useEntranceAnimation(60);
-  const featuresAnim   = useEntranceAnimation(120);
-  const aboutAnim      = useEntranceAnimation(180);
-  const reviewsAnim    = useEntranceAnimation(240);
-
-  // ── Data fetching ────────────────────────────────────────────────────────
+  const [userName, setUserName] = useState("Student");
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isGuest, setIsGuest] = useState(false);
+  const [stats, setStats] = useState({
+    lostFound: "—",
+    memories: "—",
+    clubs: "—",
+  });
 
   useEffect(() => {
     let cancelled = false;
 
-    // User name
+    // Check if in guest mode
     (async () => {
-      const stored = await getUser();
-      if (cancelled || !stored?.name) return;
-      setUserName(String(stored.name).split(' ')[0]);
+      const guestMode = await isGuestMode();
+      if (cancelled) return;
+      setIsGuest(guestMode);
     })();
 
-    // Unread notification count
-    const fetchUnreadCount = async () => {
-      try {
-        const response = await notificationsApi.list();
-        if (cancelled) return;
-        setUnreadCount((response?.data || []).filter((n) => n.unread).length);
-      } catch {
-        // Non-critical — badge simply stays at 0.
+    (async () => {
+      if (isGuest) {
+        setUserName("Guest");
+        return;
       }
-    };
-    fetchUnreadCount();
+      const stored = await getUser();
+      if (cancelled) return;
+      if (stored?.name) setUserName(String(stored.name).split(" ")[0]);
+    })();
 
-    // Aggregate stats (best-effort; each source fails independently)
     (async () => {
       try {
-        const [lostFoundResult, memoriesResult, clubsResult] = await Promise.allSettled([
+        const res = await notificationsApi.list();
+        if (cancelled) return;
+        setUnreadCount((res?.data || []).filter((n) => n.unread).length);
+      } catch {}
+    })();
+
+    (async () => {
+      try {
+        const [lf, mem, cl] = await Promise.allSettled([
           lostFoundApi.list(),
           memoriesApi.list(),
           clubsApi.list(),
         ]);
-
         if (cancelled) return;
-
-        const lostFoundCount =
-          lostFoundResult.status === 'fulfilled' ? lostFoundResult.value?.data?.length ?? 0 : null;
-        const memoriesCount =
-          memoriesResult.status === 'fulfilled'
-            ? Array.isArray(memoriesResult.value) ? memoriesResult.value.length : 0
+        const lfCount =
+          lf.status === "fulfilled" ? lf.value?.data?.length || 0 : null;
+        const memCount =
+          mem.status === "fulfilled"
+            ? Array.isArray(mem.value)
+              ? mem.value.length
+              : 0
             : null;
-        const clubsCount =
-          clubsResult.status === 'fulfilled'
-            ? Array.isArray(clubsResult.value) ? clubsResult.value.length : 0
+        const clCount =
+          cl.status === "fulfilled"
+            ? Array.isArray(cl.value)
+              ? cl.value.length
+              : 0
             : null;
-
         setStats({
-          lostFound: lostFoundCount != null ? String(lostFoundCount) : '—',
-          memories:  memoriesCount  != null ? String(memoriesCount)  : '—',
-          clubs:     clubsCount     != null ? String(clubsCount)     : '—',
+          lostFound: lfCount != null ? String(lfCount) : "—",
+          memories: memCount != null ? String(memCount) : "—",
+          clubs: clCount != null ? String(clCount) : "—",
         });
-      } catch {
-        // Stats remain as '—'.
-      }
+      } catch {}
     })();
 
-    // Real-time notification updates via WebSocket
     const socket = getSocket();
-    socket.on('notifications:changed', fetchUnreadCount);
+    const refreshUnreadCount = async () => {
+      try {
+        const res = await notificationsApi.list();
+        if (cancelled) return;
+        setUnreadCount((res?.data || []).filter((n) => n.unread).length);
+      } catch {}
+    };
+
+    socket.on("notifications:changed", refreshUnreadCount);
 
     return () => {
       cancelled = true;
-      socket.off('notifications:changed', fetchUnreadCount);
+    
+    // Check guest access
+    if (isGuest && !isFeatureAllowedForGuest(routeKey.replace(/[^a-zA-Z_]/g, "_"))) {
+      Alert.alert(
+        "Guest Access",
+        "This feature requires a full account. Please log in or create an account.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Log In", onPress: async () => {
+            await exitGuestMode();
+            navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+          }},
+        ]
+      );
+      return;
+    }
+    
+      socket.off("notifications:changed", refreshUnreadCount);
     };
   }, []);
 
-  // ── Derived data ─────────────────────────────────────────────────────────
+  // ✅ FIX 1: Reduced marginTop from 24 → 10 to close gap after hero
+  const sec0Anim = useEntrance(60);
+  const sec1Anim = useEntrance(120);
+  const sec2Anim = useEntrance(180);
+  const sec3Anim = useEntrance(240);
 
-  /** Features arranged into rows of 4 for the grid layout. */
+  const handleNav = (routeKey) => {
+    if (routeKey === "Home") return;
+    navigation.navigate(routeKey);
+  };
+
+  // Split features into rows of 4
   const featureRows = [];
   for (let i = 0; i < FEATURES.length; i += 4) {
     featureRows.push(FEATURES.slice(i, i + 4));
   }
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
-
-  const handleNavPress = (routeKey) => {
-    if (routeKey === 'Home') return;
-    navigation.navigate(routeKey);
-  };
-
-  // ── Render ───────────────────────────────────────────────────────────────
-
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-
-      {/* Sticky header — visible only after scrolling past the hero */}
-      <Animated.View style={[styles.stickyHeader, { opacity: stickyOpacity }]} pointerEvents="box-none">
+    <View style={S.root}>
+      <StatusBar
+        barStyle="light-content"
+        traView style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            {isGuest && (
+              <View style={{ 
+                backgroundColor: "rgba(255,255,255,0.2)", 
+                paddingHorizontal: 8, 
+                paddingVertical: 4,
+                borderRadius: 6
+              }}>
+                <Text style={{ fontSize: 10, fontWeight: "600", color: "#fff" }}>
+                  👤 Guest Mode
+                </Text>
+              </View>
+            )}
+            <TouchableOpacity
+              style={S.stickyBell}
+              onPress={() => navigation.navigate("Alerts")}
+            >
+              <Ionicons name="notifications" size={20} color="#fff" />
+              <PulseBadge count={unreadCount} />
+            </TouchableOpacity>
+          </Viewopacity: stickyOp }]}
+        pointerEvents="box-none"
+      >
         <LinearGradient
-          colors={[`${COLORS.primary}F9`, `${COLORS.primaryDark}F9`]}
-          style={[styles.stickyHeaderInner, { paddingTop: STATUS_BAR_HEIGHT + 8 }]}
+          colors={[C.primary + "F9", C.primaryDark + "F9"]}
+          style={[S.stickyInner, { paddingTop: SB_H + 8 }]}
         >
           <View>
-            <Text style={styles.stickyAppName}>Campix</Text>
-            <Text style={styles.stickyUniversityName}>Aditya University</Text>
+            <Text style={S.stickyApp}>Campix</Text>
+            <Text style={S.stickyUni}>Aditya University</Text>
           </View>
-          <TouchableOpacity style={styles.stickyBellButton} onPress={() => navigation.navigate('Alerts')}>
+          <TouchableOpacity
+            style={S.stickyBell}
+            onPress={() => navigation.navigate("Alerts")}
+          >
             <Ionicons name="notifications" size={20} color="#fff" />
             <PulseBadge count={unreadCount} />
           </TouchableOpacity>
@@ -551,25 +628,32 @@ export default function HomeScreen({ navigation }) {
         )}
         contentContainerStyle={{ paddingBottom: 110 }}
       >
-        {/* Hero */}
-        <HeroSection
-          statusBarHeight={STATUS_BAR_HEIGHT}
+        <Hero
+          SB_H={SB_H}
           navigation={navigation}
           userName={userName}
           unreadCount={unreadCount}
           stats={stats}
         />
 
-        {/* Campus Map banner */}
-        <Animated.View style={[mapBannerAnim, { marginTop: 10 }]}>
-          <View style={[styles.section, { paddingHorizontal: 16 }]}>
-            <TouchableOpacity activeOpacity={0.84} onPress={() => navigation?.navigate('CampusMap')}>
-              <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} style={styles.mapBanner}>
+        {/* ── Campus Map Banner — ✅ FIX: marginTop 24→10 closes the gap ── */}
+        <Animated.View style={[sec0Anim, { marginTop: 10 }]}>
+          <View style={[S.sec, { paddingHorizontal: 16 }]}>
+            <TouchableOpacity
+              activeOpacity={0.84}
+              onPress={() => navigation?.navigate("FindLocationScreen")}
+            >
+              <LinearGradient
+                colors={[C.primaryDark, C.primary]}
+                style={S.mapBanner}
+              >
                 <View>
-                  <Text style={styles.mapBannerTitle}>📍 Explore Campus Map</Text>
-                  <Text style={styles.mapBannerSubtitle}>Navigate buildings, labs & canteens</Text>
+                  <Text style={S.mapTitle}>📍 Explore Campus Map</Text>
+                  <Text style={S.mapSub}>
+                    Navigate buildings, labs & canteens
+                  </Text>
                 </View>
-                <View style={styles.mapBannerArrow}>
+                <View style={S.mapArrow}>
                   <Ionicons name="arrow-forward" size={20} color="#fff" />
                 </View>
               </LinearGradient>
@@ -577,18 +661,20 @@ export default function HomeScreen({ navigation }) {
           </View>
         </Animated.View>
 
-        {/* Core Features */}
-        <Animated.View style={featuresAnim}>
-          <View style={[styles.section, { marginTop: 16 }]}>
-            <SectionHeader title="Core Features" />
-            <View style={styles.featureGrid}>
-              {featureRows.map((row, rowIndex) => (
-                <View key={rowIndex} style={styles.featureRow}>
-                  {row.map((feature, colIndex) => (
+        {/* ── Core Features ── */}
+        <Animated.View style={sec1Anim}>
+          {/* ✅ FIX: marginTop 24→16 tightens the section gap */}
+          <View style={[S.sec, { marginTop: 16 }]}>
+            <SecHeader title="Core Features" />
+            {/* ✅ FIX 2: featureGrid uses fixed gap, rows use fixed gap */}
+            <View style={S.featureGrid}>
+              {featureRows.map((row, rowIdx) => (
+                <View key={rowIdx} style={S.featureRow}>
+                  {row.map((f, colIdx) => (
                     <FeatureCard
-                      key={feature.id}
-                      item={feature}
-                      delay={60 + (rowIndex * 4 + colIndex) * 35}
+                      key={f.id}
+                      item={f}
+                      delay={60 + (rowIdx * 4 + colIdx) * 35}
                       navigation={navigation}
                     />
                   ))}
@@ -598,26 +684,31 @@ export default function HomeScreen({ navigation }) {
           </View>
         </Animated.View>
 
-        {/* About the College */}
-        <Animated.View style={aboutAnim}>
-          <View style={styles.section}>
+        {/* ── About the College ── */}
+        <Animated.View style={sec2Anim}>
+          <View style={S.sec}>
             <TouchableOpacity
               activeOpacity={0.82}
-              style={styles.aboutTile}
-              onPress={() => navigation.navigate('About')}
+              style={S.aboutTile}
+              onPress={() => navigation.navigate("About")}
             >
-              <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} style={styles.aboutTileInner}>
-                <View style={styles.aboutLeft}>
-                  <View style={styles.adityaIconBox}>
+              <LinearGradient
+                colors={[C.primaryDark, C.primary]}
+                style={S.aboutTileInner}
+              >
+                <View style={S.aboutLeft}>
+                  <View style={S.adityaBox}>
                     <Ionicons name="school" size={24} color="#fff" />
-                    <Text style={styles.adityaIconText}>ADITYA</Text>
+                    <Text style={S.adityaText}>ADITYA</Text>
                   </View>
                   <View>
-                    <Text style={styles.aboutTitle}>About the College</Text>
-                    <Text style={styles.aboutSubtitle}>Aditya University · Surampalem, AP</Text>
+                    <Text style={S.aboutTitle}>About the College</Text>
+                    <Text style={S.aboutSub}>
+                      Aditya University · Surampalem, AP
+                    </Text>
                   </View>
                 </View>
-                <View style={styles.aboutArrow}>
+                <View style={S.aboutArrow}>
                   <Ionicons name="chevron-forward" size={18} color="#fff" />
                 </View>
               </LinearGradient>
@@ -625,334 +716,437 @@ export default function HomeScreen({ navigation }) {
           </View>
         </Animated.View>
 
-        {/* Student Reviews */}
-        <Animated.View style={reviewsAnim}>
-          <View style={styles.section}>
-            <SectionHeader title="⭐  Student Reviews" onMore={() => {}} />
-            <View style={styles.reviewList}>
-              {REVIEWS.map((review) => (
-                <ReviewCard key={review.id} item={review} />
+        {/* ── Student Reviews ── */}
+        <Animated.View style={sec3Anim}>
+          <View style={S.sec}>
+            <SecHeader title="⭐  Student Reviews" onMore={() => {}} />
+            <View style={S.fbList}>
+              {FEEDBACK.map((f) => (
+                <FeedbackCard key={f.id} item={f} />
               ))}
             </View>
           </View>
         </Animated.View>
       </Animated.ScrollView>
 
-      {/* Bottom navigation bar */}
-      <View style={styles.navWrapper}>
-        <LinearGradient colors={['#FFFFFFFD', COLORS.bg]} style={styles.navBar}>
-          {NAV_ITEMS.map((item) => {
-            const isActive = item.key === 'Home';
-            return (
+      {/* ── Bottom Nav ── */}
+      <View style={S.navWrap}>
+        <LinearGradient colors={["#FFFFFFFD", C.bg]} style={S.navBar}>
+          {isGuest ? (
+            // Guest mode navigation
+            <>
               <TouchableOpacity
-                key={item.key}
-                style={styles.navItem}
-                onPress={() => handleNavPress(item.key)}
+                style={S.navItem}
+                onPress={() => navigation.navigate("Home")}
                 activeOpacity={0.7}
               >
-                {isActive && <View style={styles.navActivePip} />}
-                <View style={[styles.navIconBox, isActive && styles.navIconBoxActive]}>
-                  <Ionicons
-                    name={isActive ? item.icon : `${item.icon}-outline`}
-                    size={23}
-                    color={isActive ? COLORS.primary : COLORS.textLight}
-                  />
-                  {item.key === 'Alerts' && <PulseBadge />}
+                <View style={S.navPip} />
+                <View style={[S.navIconBox, S.navIconBoxOn]}>
+                  <Ionicons name="home" size={23} color={C.primary} />
                 </View>
-                <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
-                  {item.label}
-                </Text>
+                <Text style={[S.navLabel, S.navLabelOn]}>Home</Text>
               </TouchableOpacity>
-            );
-          })}
+
+              <TouchableOpacity
+                style={S.navItem}
+                onPress={() => navigation.navigate("About")}
+                activeOpacity={0.7}
+              >
+                <View style={[S.navIconBox]}>
+                  <Ionicons name="school-outline" size={23} color={C.textLight} />
+                </View>
+                <Text style={S.navLabel}>About</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={S.navItem}
+                onPress={async () => {
+                  Alert.alert(
+                    "Exit Guest Mode",
+                    "You will be logged out and returned to the login screen.",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Exit",
+                        style: "destructive",
+                        onPress: async () => {
+                          await exitGuestMode();
+                          await AsyncStorage.removeItem("auth_token");
+                          navigation.reset({
+                            index: 0,
+                            routes: [{ name: "Login" }],
+                          });
+                        },
+                      },
+                    ]
+                  );
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[S.navIconBox]}>
+                  <Ionicons name="log-out-outline" size={23} color={C.red} />
+                </View>
+                <Text style={[S.navLabel, { color: C.red }]}>Exit</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            // Regular logged-in user navigation
+            NAV.map((item) => {
+              const on = item.key === "Home";
+              return (
+                <TouchableOpacity
+                  key={item.key}
+                  style={S.navItem}
+                  onPress={() => handleNav(item.key)}
+                  activeOpacity={0.7}
+                >
+                  {on && <View style={S.navPip} />}
+                  <View style={[S.navIconBox, on && S.navIconBoxOn]}>
+                    <Ionicons
+                      name={on ? item.icon : item.icon + "-outline"}
+                      size={23}
+                      color={on ? C.primary : C.textLight}
+                    />
+                    {item.key === "Alerts" && <PulseBadge />}
+                  </View>
+                  <Text style={[S.navLabel, on && S.navLabelOn]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })
+          )}
         </LinearGradient>
       </View>
     </View>
   );
 }
 
-// ─── STYLES ───────────────────────────────────────────────────────────────────
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: COLORS.bg },
+const S = StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.bg },
 
-  // Sticky header
-  stickyHeader:      { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 },
-  stickyHeaderInner: {
-    flexDirection:    'row',
-    alignItems:       'center',
-    justifyContent:   'space-between',
+  sticky: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 100 },
+  stickyInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingBottom:    12,
+    paddingBottom: 12,
   },
-  stickyAppName:        { color: '#fff', fontWeight: '900', fontSize: 17, letterSpacing: 0.4 },
-  stickyUniversityName: { color: '#D6E4F0', fontSize: 11, marginTop: 1 },
-  stickyBellButton:     { padding: 4 },
+  stickyApp: {
+    color: "#fff",
+    fontWeight: "900",
+    fontSize: 17,
+    letterSpacing: 0.4,
+  },
+  stickyUni: { color: "#D6E4F0", fontSize: 11, marginTop: 1 },
+  stickyBell: { padding: 4 },
 
-  // Hero
-  heroContainer: { width, overflow: 'hidden', borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
+  heroContainer: {
+    width,
+    overflow: "hidden",
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
   heroBar: {
-    position:          'absolute',
-    left:              0,
-    right:             0,
-    flexDirection:     'row',
-    justifyContent:    'space-between',
-    alignItems:        'center',
+    position: "absolute",
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
   },
-  brandRow:            { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   brandIcon: {
-    width:          38,
-    height:         38,
-    borderRadius:   11,
-    justifyContent: 'center',
-    alignItems:     'center',
-    shadowColor:    '#000',
-    shadowOffset:   { width: 0, height: 2 },
-    shadowOpacity:  0.3,
-    shadowRadius:   4,
-    elevation:      4,
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  heroAppName: {
-    color:            '#FFFFFF',
-    fontWeight:       '900',
-    fontSize:         18,
-    letterSpacing:    0.3,
-    textShadowColor:  'rgba(0,0,0,0.5)',
+  heroApp: {
+    color: "#FFFFFF",
+    fontWeight: "900",
+    fontSize: 18,
+    letterSpacing: 0.3,
+    textShadowColor: "rgba(0,0,0,0.5)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
-  heroUniversityName: {
-    color:         'rgba(255,255,255,0.80)',
-    fontSize:      10,
-    fontWeight:    '600',
-    marginTop:     1,
+  heroUni: {
+    color: "rgba(255,255,255,0.80)",
+    fontSize: 10,
+    fontWeight: "600",
+    marginTop: 1,
     letterSpacing: 0.4,
   },
-  bellButton: {
-    width:           42,
-    height:          42,
-    borderRadius:    21,
-    backgroundColor: 'rgba(0,0,0,0.28)',
-    justifyContent:  'center',
-    alignItems:      'center',
-    borderWidth:     1,
-    borderColor:     'rgba(255,255,255,0.22)',
+  bellBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(0,0,0,0.28)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
   },
-  welcomeBlock: { position: 'absolute', bottom: 70, left: 22, right: 22 },
-  heroGreeting: {
-    color:            'rgba(255,255,255,0.90)',
-    fontSize:         15,
-    fontWeight:       '600',
-    letterSpacing:    0.2,
-    textShadowColor:  'rgba(0,0,0,0.7)',
+
+  welcomeBlock: { position: "absolute", bottom: 70, left: 22, right: 22 },
+  heroHi: {
+    color: "rgba(255,255,255,0.90)",
+    fontSize: 15,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+    textShadowColor: "rgba(0,0,0,0.7)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 6,
   },
   heroName: {
-    color:            '#FFFFFF',
-    fontSize:         32,
-    fontWeight:       '900',
-    letterSpacing:    0.2,
-    marginTop:        2,
-    textShadowColor:  'rgba(0,0,0,0.8)',
+    color: "#FFFFFF",
+    fontSize: 32,
+    fontWeight: "900",
+    letterSpacing: 0.2,
+    marginTop: 2,
+    textShadowColor: "rgba(0,0,0,0.8)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 10,
   },
   heroPill: {
-    flexDirection:    'row',
-    alignItems:       'center',
-    gap:              7,
-    marginTop:        14,
-    alignSelf:        'flex-start',
-    backgroundColor:  'rgba(255,255,255,0.18)',
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    marginTop: 14,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.18)",
     paddingHorizontal: 14,
-    paddingVertical:  7,
-    borderRadius:     22,
-    borderWidth:      1,
-    borderColor:      'rgba(255,255,255,0.28)',
+    paddingVertical: 7,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.28)",
   },
-  heroPillText: { color: 'rgba(255,255,255,0.92)', fontSize: 11, fontWeight: '600', letterSpacing: 0.3 },
+  heroPillT: {
+    color: "rgba(255,255,255,0.92)",
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.3,
+  },
+
   statsStrip: {
-    position:              'absolute',
-    bottom:                0,
-    left:                  0,
-    right:                 0,
-    flexDirection:         'row',
-    backgroundColor:       'rgba(0,0,0,0.45)',
-    paddingVertical:       13,
-    borderBottomLeftRadius:  30,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    backgroundColor: "rgba(0,0,0,0.45)",
+    paddingVertical: 13,
+    borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
-    borderTopWidth:        1,
-    borderTopColor:        'rgba(255,255,255,0.10)',
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.10)",
   },
-  statItem:       { flex: 1, alignItems: 'center', gap: 3 },
-  statItemBorder: { borderRightWidth: 1, borderRightColor: 'rgba(255,255,255,0.18)' },
-  statValue: {
-    color:            '#fff',
-    fontWeight:       '900',
-    fontSize:         16,
-    textShadowColor:  'rgba(0,0,0,0.5)',
+  statItem: { flex: 1, alignItems: "center", gap: 3 },
+  statBorder: {
+    borderRightWidth: 1,
+    borderRightColor: "rgba(255,255,255,0.18)",
+  },
+  statVal: {
+    color: "#fff",
+    fontWeight: "900",
+    fontSize: 16,
+    textShadowColor: "rgba(0,0,0,0.5)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
-  statLabel: { color: 'rgba(255,255,255,0.72)', fontSize: 10, fontWeight: '600' },
+  statLabel: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 10,
+    fontWeight: "600",
+  },
 
-  // Sections
-  section:       { marginTop: 16 },
-  sectionHeader: {
-    flexDirection:    'row',
-    justifyContent:   'space-between',
-    alignItems:       'center',
+  // ✅ FIX: sec marginTop reduced to 16 (was 24) — tighter spacing overall
+  sec: { marginTop: 16 },
+  secHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
-    marginBottom:     14,
+    marginBottom: 14,
   },
-  sectionTitle:    { fontSize: 16, fontWeight: '800', color: COLORS.textDark, letterSpacing: 0.1 },
-  sectionMoreLink: { fontSize: 13, fontWeight: '600', color: COLORS.primary },
+  secTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: C.textDark,
+    letterSpacing: 0.1,
+  },
+  secMore: { fontSize: 13, fontWeight: "600", color: C.primary },
 
-  // Feature grid
+  // ✅ FIX 2: Feature grid — fixed gap, rows are flex with fixed gap
   featureGrid: { paddingHorizontal: GRID_PAD, gap: GRID_GAP },
-  featureRow:  { flexDirection: 'row', gap: GRID_GAP },
+  featureRow: { flexDirection: "row", gap: GRID_GAP },
 
-  // Map banner
-  mapBanner: {
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-    alignItems:     'center',
-    borderRadius:   22,
-    padding:        22,
-    shadowColor:    `${COLORS.primary}44`,
-    shadowOffset:   { width: 0, height: 6 },
-    shadowOpacity:  1,
-    shadowRadius:   14,
-    elevation:      6,
-  },
-  mapBannerTitle:    { color: '#fff', fontWeight: '800', fontSize: 16 },
-  mapBannerSubtitle: { color: '#ffffffAA', fontSize: 12, marginTop: 4 },
-  mapBannerArrow: {
-    width:          42,
-    height:         42,
-    borderRadius:   21,
-    backgroundColor:'#FFFFFF1E',
-    justifyContent: 'center',
-    alignItems:     'center',
-  },
-
-  // About tile
   aboutTile: {
     marginHorizontal: 16,
-    borderRadius:     22,
-    overflow:         'hidden',
-    shadowColor:      `${COLORS.primaryDark}44`,
-    shadowOffset:     { width: 0, height: 6 },
-    shadowOpacity:    1,
-    shadowRadius:     14,
-    elevation:        6,
+    borderRadius: 22,
+    overflow: "hidden",
+    shadowColor: C.primaryDark + "44",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 14,
+    elevation: 6,
   },
   aboutTileInner: {
-    flexDirection:    'row',
-    alignItems:       'center',
-    justifyContent:   'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingVertical:  18,
+    paddingVertical: 18,
   },
-  aboutLeft:     { flexDirection: 'row', alignItems: 'center', gap: 16, flex: 1 },
-  adityaIconBox: {
-    width:           58,
-    height:          58,
-    borderRadius:    16,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    justifyContent:  'center',
-    alignItems:      'center',
-    gap:             3,
-    borderWidth:     1,
-    borderColor:     'rgba(255,255,255,0.28)',
+  aboutLeft: { flexDirection: "row", alignItems: "center", gap: 16, flex: 1 },
+  adityaBox: {
+    width: 58,
+    height: 58,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 3,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.28)",
   },
-  adityaIconText: { color: '#fff', fontSize: 7, fontWeight: '900', letterSpacing: 1.6 },
-  aboutTitle:     { color: '#fff', fontWeight: '800', fontSize: 15 },
-  aboutSubtitle:  { color: 'rgba(255,255,255,0.75)', fontSize: 11, marginTop: 3 },
+  adityaText: {
+    color: "#fff",
+    fontSize: 7,
+    fontWeight: "900",
+    letterSpacing: 1.6,
+  },
+  aboutTitle: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  aboutSub: { color: "rgba(255,255,255,0.75)", fontSize: 11, marginTop: 3 },
   aboutArrow: {
-    width:          34,
-    height:         34,
-    borderRadius:   17,
-    backgroundColor:'rgba(255,255,255,0.18)',
-    justifyContent: 'center',
-    alignItems:     'center',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
-  // Reviews
-  reviewList: { paddingHorizontal: 16, gap: 10 },
-  reviewCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius:    16,
-    padding:         14,
-    shadowColor:     `${COLORS.primary}18`,
-    shadowOffset:    { width: 0, height: 3 },
-    shadowOpacity:   1,
-    shadowRadius:    10,
-    elevation:       3,
-    borderWidth:     1,
-    borderColor:     COLORS.border,
+  fbList: { paddingHorizontal: 16, gap: 10 },
+  fbCard: {
+    backgroundColor: C.surface,
+    borderRadius: 16,
+    padding: 14,
+    shadowColor: C.primary + "18",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: C.border,
   },
-  reviewHeader:     { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  reviewAvatar:     { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  reviewAvatarText: { color: '#fff', fontWeight: '800', fontSize: 14 },
-  reviewName:       { color: COLORS.textDark, fontWeight: '700', fontSize: 13 },
-  reviewRole:       { color: COLORS.textLight, fontSize: 11, marginTop: 1 },
-  reviewText:       { color: COLORS.textMid, fontSize: 12, lineHeight: 19, fontStyle: 'italic' },
+  fbHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 10,
+  },
+  fbAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fbAvatarT: { color: "#fff", fontWeight: "800", fontSize: 14 },
+  fbName: { color: C.textDark, fontWeight: "700", fontSize: 13 },
+  fbRole: { color: C.textLight, fontSize: 11, marginTop: 1 },
+  fbText: {
+    color: C.textMid,
+    fontSize: 12,
+    lineHeight: 19,
+    fontStyle: "italic",
+  },
 
-  // Notification badge
+  mapBanner: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderRadius: 22,
+    padding: 22,
+    shadowColor: C.primary + "44",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 14,
+    elevation: 6,
+  },
+  mapTitle: { color: "#fff", fontWeight: "800", fontSize: 16 },
+  mapSub: { color: "#ffffffAA", fontSize: 12, marginTop: 4 },
+  mapArrow: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#FFFFFF1E",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
   badge: {
-    position:        'absolute',
-    top:             -4,
-    right:           -4,
-    backgroundColor: '#FFB300',
-    width:           16,
-    height:          16,
-    borderRadius:    8,
-    justifyContent:  'center',
-    alignItems:      'center',
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#FFB300",
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  badgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
+  badgeText: { color: "#fff", fontSize: 9, fontWeight: "800" },
 
-  // Bottom navigation
-  navWrapper: {
-    position:     'absolute',
-    bottom:       0,
-    left:         0,
-    right:        0,
-    shadowColor:  '#00000018',
+  navWrap: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    shadowColor: "#00000018",
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 1,
     shadowRadius: 16,
-    elevation:    20,
+    elevation: 20,
   },
   navBar: {
-    flexDirection:         'row',
-    paddingBottom:         Platform.OS === 'ios' ? 28 : 10,
-    paddingTop:            10,
-    borderTopLeftRadius:   24,
-    borderTopRightRadius:  24,
-    borderTopWidth:        1,
-    borderColor:           COLORS.border,
+    flexDirection: "row",
+    paddingBottom: Platform.OS === "ios" ? 28 : 10,
+    paddingTop: 10,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    borderColor: C.border,
   },
-  navItem:          { flex: 1, alignItems: 'center', gap: 4, paddingTop: 2 },
-  navActivePip: {
-    position:        'absolute',
-    top:             -10,
-    width:           28,
-    height:          3,
-    borderRadius:    3,
-    backgroundColor: COLORS.primary,
+  navItem: { flex: 1, alignItems: "center", gap: 4, paddingTop: 2 },
+  navPip: {
+    position: "absolute",
+    top: -10,
+    width: 28,
+    height: 3,
+    borderRadius: 3,
+    backgroundColor: C.primary,
   },
   navIconBox: {
-    width:          46,
-    height:         36,
-    justifyContent: 'center',
-    alignItems:     'center',
-    borderRadius:   13,
+    width: 46,
+    height: 36,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 13,
   },
-  navIconBoxActive: { backgroundColor: `${COLORS.primary}18` },
-  navLabel:         { fontSize: 10, color: COLORS.textLight, fontWeight: '600' },
-  navLabelActive:   { color: COLORS.primary, fontWeight: '800' },
+  navIconBoxOn: { backgroundColor: C.primary + "18" },
+  navLabel: { fontSize: 10, color: C.textLight, fontWeight: "600" },
+  navLabelOn: { color: C.primary, fontWeight: "800" },
 });
