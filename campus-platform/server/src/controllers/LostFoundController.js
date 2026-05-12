@@ -5,6 +5,7 @@ const {
   findLostFoundMatches,
   summarizeMatches,
 } = require("../services/lostFoundMatchService");
+const { analyzeLostItem } = require("../services/aiIntegrationService");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -85,6 +86,12 @@ const createLostFoundItem = async (req, res) => {
     const matchSuggestions = await findLostFoundMatches(item);
     const matchSummary = summarizeMatches(matchSuggestions);
 
+    // Run lightweight AI analysis (text + image) and include in response
+    const aiAnalysis = await analyzeLostItem({
+      text: item.description,
+      imageUrl: item.imageUrl,
+    });
+
     if (matchSuggestions.length > 0) {
       const notification = await createAudienceNotification({
         title: `Possible match found for ${item.itemName}`,
@@ -94,7 +101,7 @@ const createLostFoundItem = async (req, res) => {
         audienceUserId: item.postedBy,
       });
 
-      emitItemUpdate("match", item, { matchSuggestions });
+      emitItemUpdate("match", item, { matchSuggestions, aiAnalysis });
 
       if (notification) {
         emitRealtime("notifications:changed", {
@@ -108,6 +115,7 @@ const createLostFoundItem = async (req, res) => {
       message: "Item created successfully",
       data: item,
       matchSuggestions,
+      aiAnalysis,
     });
   } catch (error) {
     console.error("[createLostFoundItem]", error);
