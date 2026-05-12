@@ -15,45 +15,36 @@ import {
   Alert,
   Image,
 } from 'react-native';
-<<<<<<< HEAD:campus-platform/client/src/screens/LoginScreen.jsx
 import { authApi, setSession } from '../services/api';
-=======
-import AsyncStorage from '@react-native-async-storage/async-storage';
->>>>>>> 42497444c3dfa972ccb0e3bbcafe0428cec6335a:client/src/screens/LoginScreen.jsx
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
-const SCREEN_WIDTH = Dimensions.get('window').width;
-
-const API_BASE_URL = 'http://192.168.1.7:5000';
-
 const COLORS = {
-  background:       '#1A0000',
-  card:             '#2A0000',
-  inputBg:          '#1F0000',
-  borderDefault:    '#2A2A3E',
-  borderCard:       '#4A0000',
-  borderInput:      '#5A0000',
-  borderFocused:    '#6C63FF',
-  primary:          '#D00000',
-  primaryBright:    '#FF3333',
-  primaryLight:     '#FF4444',
-  white:            '#FFFFFF',
-  textSubtitle:     '#FFBBBB',
-  textLabel:        '#CC6666',
-  textPlaceholder:  '#4A4A6A',
-  textMuted:        '#AAAACC',
-  orb1:             '#D00000',
-  orb2:             '#FF3333',
+  background:      '#1A0000',
+  card:            '#2A0000',
+  inputBg:         '#1F0000',
+  borderDefault:   '#2A2A3E',
+  borderCard:      '#4A0000',
+  borderInput:     '#5A0000',
+  borderFocused:   '#6C63FF',
+  primary:         '#D00000',
+  primaryLight:    '#FF4444',
+  white:           '#FFFFFF',
+  textSubtitle:    '#FFBBBB',
+  textLabel:       '#CC6666',
+  textPlaceholder: '#4A4A6A',
+  textMuted:       '#AAAACC',
+  orb1:            '#D00000',
+  orb2:            '#FF3333',
 };
 
 const ANIMATION = {
-  logoFriction:   5,
-  logoTension:    60,
-  logoSpinMs:     600,
-  contentFadeMs:  500,
-  slideFriction:  8,
-  slideTension:   50,
-  inputBorderMs:  200,
+  logoFriction:  5,
+  logoTension:   60,
+  logoSpinMs:    600,
+  contentFadeMs: 500,
+  slideFriction: 8,
+  slideTension:  50,
+  inputBorderMs: 200,
 };
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
@@ -119,12 +110,20 @@ const InputField = ({
   });
 
   const focusedShadow = isFocused
-    ? { shadowColor: COLORS.borderFocused, shadowOpacity, shadowRadius: 8, shadowOffset: { width: 0, height: 0 }, elevation: 4 }
+    ? {
+        shadowColor:  COLORS.borderFocused,
+        shadowOpacity,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 0 },
+        elevation:    4,
+      }
     : {};
 
   return (
     <Animated.View style={[styles.inputWrapper, { borderColor }, focusedShadow]}>
-      <Text style={[styles.inputIcon, isFocused && styles.inputIconFocused]}>{icon}</Text>
+      <Text style={[styles.inputIcon, isFocused && styles.inputIconFocused]}>
+        {icon}
+      </Text>
       <TextInput
         style={styles.input}
         placeholder={placeholder}
@@ -156,7 +155,9 @@ const BackgroundOrbs = () => (
 );
 
 const LogoSection = ({ scale, spin, opacity }) => (
-  <Animated.View style={[styles.logoContainer, { transform: [{ scale }, { rotate: spin }], opacity }]}>
+  <Animated.View
+    style={[styles.logoContainer, { transform: [{ scale }, { rotate: spin }], opacity }]}
+  >
     <View style={styles.logoRing}>
       <Image
         source={require('../../assets/pic1.png')}
@@ -206,68 +207,34 @@ export default function LoginScreen({ navigation }) {
     Animated.sequence([
       Animated.parallel([
         Animated.spring(logoScale, {
-          toValue: 1,
-          friction: ANIMATION.logoFriction,
-          tension:  ANIMATION.logoTension,
+          toValue:         1,
+          friction:        ANIMATION.logoFriction,
+          tension:         ANIMATION.logoTension,
           useNativeDriver: true,
         }),
         Animated.timing(logoSpin, {
-          toValue:  1,
-          duration: ANIMATION.logoSpinMs,
+          toValue:         1,
+          duration:        ANIMATION.logoSpinMs,
           useNativeDriver: true,
         }),
       ]),
       Animated.parallel([
         Animated.timing(fadeAnim, {
-          toValue:  1,
-          duration: ANIMATION.contentFadeMs,
+          toValue:         1,
+          duration:        ANIMATION.contentFadeMs,
           useNativeDriver: true,
         }),
         Animated.spring(slideAnim, {
-          toValue:  0,
-          friction: ANIMATION.slideFriction,
-          tension:  ANIMATION.slideTension,
+          toValue:         0,
+          friction:        ANIMATION.slideFriction,
+          tension:         ANIMATION.slideTension,
           useNativeDriver: true,
         }),
       ]),
     ]).start();
   }, []);
 
-<<<<<<< HEAD:campus-platform/client/src/screens/LoginScreen.jsx
-  const spin = logoSpin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-
-const handleLogin = async () => {
-  if (!email.trim()) {
-    Alert.alert("Missing Field", "Please enter your university email.");
-    return;
-  }
-
-  if (!password) {
-    Alert.alert("Missing Field", "Please enter your password.");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const data = await authApi.login({ email: email.trim(), password });
-
-    if (data?.token) {
-      await setSession({ token: data.token, role: data.role });
-      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
-    } else {
-      Alert.alert("Login failed", data?.message || "Invalid credentials");
-    }
-  } catch (err) {
-    Alert.alert(
-      "Login failed",
-      err?.message || "Network error. Verify the backend is running and API_BASE_URL is reachable."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
-=======
+  // ─── Handlers ────────────────────────────────────────────────────────────────
   const validateInputs = () => {
     if (!email.trim()) {
       Alert.alert('Missing Field', 'Please enter your university email.');
@@ -280,38 +247,30 @@ const handleLogin = async () => {
     return true;
   };
 
-  const handleLoginSuccess = async (data) => {
-    await AsyncStorage.setItem('token', data.token);
-    navigation.navigate('ResetPassword', { email: email.trim() });
-  };
-
   const handleLogin = async () => {
     if (!validateInputs()) return;
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email: email.trim(), password }),
-      });
+      const data = await authApi.login({ email: email.trim(), password });
 
-      const data = await response.json();
-
-      if (data.success) {
-        await handleLoginSuccess(data);
+      if (data?.token) {
+        await setSession({ token: data.token, role: data.role });
+        navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
       } else {
-        Alert.alert('Error', data.message || 'Invalid credentials');
+        Alert.alert('Login Failed', data?.message || 'Invalid credentials');
       }
     } catch (err) {
-      console.error('Login error:', err);
-      Alert.alert('Error', 'Network error. Please try again.');
+      Alert.alert(
+        'Login Failed',
+        err?.message || 'Network error. Verify the backend is running.',
+      );
     } finally {
       setLoading(false);
     }
   };
->>>>>>> 42497444c3dfa972ccb0e3bbcafe0428cec6335a:client/src/screens/LoginScreen.jsx
 
+  // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <KeyboardAvoidingView
       style={styles.flex}
@@ -331,7 +290,9 @@ const handleLogin = async () => {
 
           <TitleSection opacity={fadeAnim} translateY={slideAnim} />
 
-          <Animated.View style={[styles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          <Animated.View
+            style={[styles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+          >
             <Text style={styles.fieldLabel}>University Email</Text>
             <InputField
               icon="✉️"
@@ -368,19 +329,16 @@ const handleLogin = async () => {
             <TouchableOpacity style={styles.ssoBtn}>
               <Text style={styles.ssoBtnText}>🏛️  Sign in with University SSO</Text>
             </TouchableOpacity>
-<<<<<<< HEAD:campus-platform/client/src/screens/LoginScreen.jsx
 
             <TouchableOpacity
-              style={styles.forgotRow}
-              onPress={() => navigation.navigate("Register")}
+              style={styles.registerRow}
+              onPress={() => navigation.navigate('Register')}
             >
               <Text style={styles.forgotText}>
-                New here? <Text style={{ fontWeight: '800' }}>Create an account</Text>
+                New here?{' '}
+                <Text style={styles.registerLink}>Create an account</Text>
               </Text>
             </TouchableOpacity>
-
-=======
->>>>>>> 42497444c3dfa972ccb0e3bbcafe0428cec6335a:client/src/screens/LoginScreen.jsx
           </Animated.View>
 
           <Animated.View style={{ opacity: fadeAnim }}>
@@ -559,17 +517,25 @@ const styles = StyleSheet.create({
     height: 16,
   },
 
-  // Forgot password
+  // Forgot & Register
   forgotRow: {
     alignSelf: 'flex-end',
     marginTop: 12,
     marginBottom: 24,
+  },
+  registerRow: {
+    alignSelf: 'center',
+    marginTop: 16,
   },
   forgotText: {
     color: COLORS.primaryLight,
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.2,
+  },
+  registerLink: {
+    fontWeight: '800',
+    color: COLORS.primaryLight,
   },
 
   // Login button
