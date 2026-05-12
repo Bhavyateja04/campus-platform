@@ -1,5 +1,5 @@
 const express = require("express");
-const router = express.Router();
+const router  = express.Router();
 
 const {
   createGoodsItem,
@@ -8,21 +8,17 @@ const {
   deleteItem,
   markAsSold,
 } = require("../controllers/GoodsController");
+
 const protect = require("../middleware/authMiddleware");
 
-// @route   POST    /api/goods
-router.post("/", protect, createGoodsItem);
+// ─── Routes ───────────────────────────────────────────────────────────────────
 
-// @route   GET     /api/goods
-router.get("/", protect, viewItems);
+router.post  ("/",          protect, createGoodsItem);
+router.get   ("/",          protect, viewItems);
+router.put   ("/:id",       protect, updateItem);
+router.delete("/:id",       protect, deleteItem);
+router.patch ("/:id/sold",  protect, markAsSold);
 
-// @route   PUT     /api/goods/:id
-router.put("/:id", protect, updateItem);
-
-// @route   DELETE  /api/goods/:id
-router.delete("/:id", protect, deleteItem);
-
-// @route   PATCH   /api/goods/:id/sold
-router.patch("/:id/sold", protect, markAsSold);
+// ─── Export ───────────────────────────────────────────────────────────────────
 
 module.exports = router;
