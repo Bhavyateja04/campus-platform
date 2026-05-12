@@ -1,4 +1,10 @@
-const LostItem = require('../models/LostModel');
+const LostItem = require("../models/LostModel");
+const Notification = require("../models/NotificationModel");
+const { emitRealtime } = require("../realtime");
+const {
+  findLostFoundMatches,
+  summarizeMatches,
+} = require("../services/lostFoundMatchService");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -8,7 +14,7 @@ const LostItem = require('../models/LostModel');
 const findItemOrFail = async (id, res) => {
   const item = await LostItem.findById(id);
   if (!item) {
-    res.status(404).json({ message: 'Item not found' });
+    res.status(404).json({ message: "Item not found" });
     return null;
   }
   return item;
@@ -19,10 +25,46 @@ const findItemOrFail = async (id, res) => {
  */
 const isPoster = (item, userId, res) => {
   if (item.postedBy.toString() !== userId) {
-    res.status(403).json({ message: 'Unauthorized: you did not post this item' });
+    res
+      .status(403)
+      .json({ message: "Unauthorized: you did not post this item" });
     return false;
   }
   return true;
+};
+
+const populateItem = async (item) => {
+  if (!item) return item;
+  await item.populate("postedBy", "name rollNumber email phone profileImage");
+  await item.populate(
+    "foundBy.userId",
+    "name rollNumber email phone profileImage",
+  );
+  return item;
+};
+
+const emitItemUpdate = (action, item, extra = {}) => {
+  emitRealtime("lostfound:changed", {
+    action,
+    itemId: item ? String(item._id) : undefined,
+    type: item?.status || item?.type,
+    ...extra,
+  });
+};
+
+const createAudienceNotification = async ({ title, body, audienceUserId }) => {
+  const userId = audienceUserId?._id || audienceUserId;
+  if (!userId) return null;
+
+  return Notification.create({
+    title,
+    body,
+    type: "System",
+    icon: "sparkles-outline",
+    color: "#4A6FA5",
+    audience: "user",
+    audienceUserId: userId,
+  });
 };
 
 // ─── Controllers ─────────────────────────────────────────────────────────────
@@ -38,10 +80,38 @@ const createLostFoundItem = async (req, res) => {
       postedBy: req.user.id,
     });
 
-    res.status(201).json({ message: 'Item created successfully', data: item });
+    await populateItem(item);
+
+    const matchSuggestions = await findLostFoundMatches(item);
+    const matchSummary = summarizeMatches(matchSuggestions);
+
+    if (matchSuggestions.length > 0) {
+      const notification = await createAudienceNotification({
+        title: `Possible match found for ${item.itemName}`,
+        body:
+          matchSummary ||
+          `We found ${matchSuggestions.length} possible match${matchSuggestions.length > 1 ? "es" : ""}.`,
+        audienceUserId: item.postedBy,
+      });
+
+      emitItemUpdate("match", item, { matchSuggestions });
+
+      if (notification) {
+        emitRealtime("notifications:changed", {
+          action: "created",
+          notification,
+        });
+      }
+    }
+
+    res.status(201).json({
+      message: "Item created successfully",
+      data: item,
+      matchSuggestions,
+    });
   } catch (error) {
-    console.error('[createLostFoundItem]', error);
-    res.status(500).json({ message: 'Error creating item' });
+    console.error("[createLostFoundItem]", error);
+    res.status(500).json({ message: "Error creating item" });
   }
 };
 
@@ -57,10 +127,19 @@ const updateLostFoundItem = async (req, res) => {
     Object.assign(item, req.body);
     await item.save();
 
-    res.status(200).json({ message: 'Item updated successfully', data: item });
+    await populateItem(item);
+    const matchSuggestions = await findLostFoundMatches(item);
+
+    emitItemUpdate("updated", item, { matchSuggestions });
+
+    res.status(200).json({
+      message: "Item updated successfully",
+      data: item,
+      matchSuggestions,
+    });
   } catch (error) {
-    console.error('[updateLostFoundItem]', error);
-    res.status(500).json({ message: 'Error updating item' });
+    console.error("[updateLostFoundItem]", error);
+    res.status(500).json({ message: "Error updating item" });
   }
 };
 
@@ -70,12 +149,16 @@ const updateLostFoundItem = async (req, res) => {
  */
 const getAllLostFoundItems = async (req, res) => {
   try {
-    const items = await LostItem.find();
+    const items = await LostItem.find()
+      .populate("postedBy", "name rollNumber email phone profileImage")
+      .populate("foundBy.userId", "name rollNumber email phone profileImage");
 
-    res.status(200).json({ message: 'Items retrieved successfully', data: items });
+    res
+      .status(200)
+      .json({ message: "Items retrieved successfully", data: items });
   } catch (error) {
-    console.error('[getAllLostFoundItems]', error);
-    res.status(500).json({ message: 'Error retrieving items' });
+    console.error("[getAllLostFoundItems]", error);
+    res.status(500).json({ message: "Error retrieving items" });
   }
 };
 
@@ -90,10 +173,12 @@ const deleteLostFoundItem = async (req, res) => {
 
     await item.deleteOne();
 
-    res.status(200).json({ message: 'Item deleted successfully' });
+    emitItemUpdate("deleted", item);
+
+    res.status(200).json({ message: "Item deleted successfully" });
   } catch (error) {
-    console.error('[deleteLostFoundItem]', error);
-    res.status(500).json({ message: 'Error deleting item' });
+    console.error("[deleteLostFoundItem]", error);
+    res.status(500).json({ message: "Error deleting item" });
   }
 };
 
@@ -106,14 +191,33 @@ const markItemAsFound = async (req, res) => {
     const item = await findItemOrFail(req.params.id, res);
     if (!item) return;
 
-    item.status  = 'found';
-    item.foundId = req.user.id;
+    item.status = "found";
+    item.foundBy = {
+      ...(item.foundBy || {}),
+      userId: req.user.id,
+    };
     await item.save();
 
-    res.status(200).json({ message: 'Item marked as found' });
+    await populateItem(item);
+
+    const notification = await createAudienceNotification({
+      title: `${item.itemName} marked as found`,
+      body: "Your lost item has been updated and may now be visible to other students.",
+      audienceUserId: item.postedBy,
+    });
+
+    emitItemUpdate("found", item);
+    if (notification) {
+      emitRealtime("notifications:changed", {
+        action: "created",
+        notification,
+      });
+    }
+
+    res.status(200).json({ message: "Item marked as found" });
   } catch (error) {
-    console.error('[markItemAsFound]', error);
-    res.status(500).json({ message: 'Error marking item as found' });
+    console.error("[markItemAsFound]", error);
+    res.status(500).json({ message: "Error marking item as found" });
   }
 };
 
@@ -126,13 +230,29 @@ const markItemAsResolved = async (req, res) => {
     const item = await findItemOrFail(req.params.id, res);
     if (!item || !isPoster(item, req.user.id, res)) return;
 
-    item.status = 'resolved';
+    item.status = "resolved";
     await item.save();
 
-    res.status(200).json({ message: 'Item marked as resolved' });
+    await populateItem(item);
+
+    const notification = await createAudienceNotification({
+      title: `${item.itemName} marked as resolved`,
+      body: "The lost-and-found thread has been closed.",
+      audienceUserId: item.postedBy,
+    });
+
+    emitItemUpdate("resolved", item);
+    if (notification) {
+      emitRealtime("notifications:changed", {
+        action: "created",
+        notification,
+      });
+    }
+
+    res.status(200).json({ message: "Item marked as resolved" });
   } catch (error) {
-    console.error('[markItemAsResolved]', error);
-    res.status(500).json({ message: 'Error marking item as resolved' });
+    console.error("[markItemAsResolved]", error);
+    res.status(500).json({ message: "Error marking item as resolved" });
   }
 };
 
@@ -145,4 +265,7 @@ module.exports = {
   deleteLostFoundItem,
   markItemAsFound,
   markItemAsResolved,
+  updateItem: updateLostFoundItem,
+  viewItems: getAllLostFoundItems,
+  deleteItem: deleteLostFoundItem,
 };
