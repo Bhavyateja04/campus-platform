@@ -58,9 +58,17 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: "Internal server error" });
 });
 
+const initializeChatSocket = require("./future-scope/chatSocket");
+
+initializeChatSocket(io);
+
 const PORT = process.env.PORT || 5000;
 initRealtime(server);
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// NOTIFICATION ROUTES
+app.use("/api", notificationRoutes);
+
