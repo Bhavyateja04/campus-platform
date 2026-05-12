@@ -11,7 +11,7 @@ University students often face many small but common problems in their daily cam
 - Losing personal items
 - Difficulty navigating the campus
 - Long waiting times in canteens
-- Lack of access to second-hand study materials
+- Lack of access to second-hand materials
 - Difficulty finding placement guidance
 - Lack of communication about university events or notices
 
@@ -63,8 +63,6 @@ Public users can view basic information about the university including:
 
 - Overview of Aditya University
 - Important contact details
-- Information about departments
-- Facilities available on campus
 
 This helps visitors and new students understand the campus better.
 
@@ -166,7 +164,7 @@ Students who find an item can post:
 
 Students who lost the item can directly contact the person who found it.
 
-### AI-Based Item Matching (Optional)
+### AI-Based Item Matching 
 
 An AI system analyzes:
 
@@ -182,11 +180,11 @@ Lost wallet image vs Found wallet image → **85% similarity**
 
 ---
 
-# Second-Hand Study Marketplace
+# Second-Hand Marketplace
 
-Students often need textbooks or academic materials but buying new ones can be expensive.
+Students often need materials but buying new ones can be expensive.
 
-The application includes a **second-hand marketplace** where students can buy and sell study-related items.
+The application includes a **second-hand marketplace** where students can buy and sell any items.
 
 ## Selling an Item
 
@@ -209,8 +207,7 @@ Users can filter items by:
 
 - Price
 - Category
-- Condition
-- Quality
+
 
 Once an item is sold, the seller can remove the listing.
 
@@ -244,30 +241,6 @@ Students can:
 - Check prices
 - Exit long queues
 
-## Payment Options
-
-### Platform Service Fee
-
-Students pay a small service fee per order.
-
-Example:
-
-Order Amount ₹100 → Service Fee ₹5  
-Order Amount ₹150 → Service Fee ₹10
-
-### Partial Advance Payment
-
-Students pay **50% of the order amount in the app**.
-
-When they arrive at the canteen:
-
-- They collect the order
-- Pay the remaining amount directly
-
-This reduces queues and improves service efficiency.
-
----
-
 # Placement Experience Sharing
 
 Students who get placed in companies can share their **interview experiences** to help juniors.
@@ -284,22 +257,6 @@ Students can share:
 - Questions asked
 - Preparation strategies
 - Advice for juniors
-
-### AI Experience Summarization (Optional)
-
-If multiple students share experiences about the same company, AI can generate a **summary of common patterns**.
-
-Example:
-
-Company: Amazon
-
-Summary:
-
-- Focus on Data Structures
-- Coding rounds were difficult
-- System design questions asked
-
----
 
 # Clubs Information
 
@@ -357,6 +314,7 @@ Other students can:
 - View posts
 - Like posts
 - Read shared memories
+- Save posts
 
 ### AI Content Moderation
 
@@ -370,39 +328,7 @@ The system detects:
 - Inappropriate images
 - Offensive language
 
-If a post is reported by **more than five users**, it will automatically be removed.
-
----
-
-# Student Discussion Spaces
-
-The application includes **discussion spaces** where students can share ideas and communicate.
-
-Discussion areas are organized into categories.
-
-### Example Categories
-
-- Programming
-- Placements
-- Internships
-- Study Materials
-- Hackathons
-- Events
-- Clubs
-- General Discussion
-
-Students can join categories and participate in discussions.
-
-Students can:
-
-- Ask questions
-- Share knowledge
-- Post resources
-- Discuss ideas
-
-This creates a **collaborative learning environment within the university.**
-
----
+If a post is reported by **more than 60 percent of total users**, it will automatically be removed.
 
 # Technology Stack
 
@@ -410,7 +336,7 @@ This creates a **collaborative learning environment within the university.**
 
 - React.js
 - Next.js
-- Tailwind CSS
+- CSS
 
 Pages include:
 
@@ -422,9 +348,8 @@ Pages include:
 - Campus Map Page
 - Clubs Page
 - Placement Experiences Page
-- Discussion Forum
 - Notifications Page
-- AI Tools Page
+- Campus memories page
 - Public Portal Pages
 
 Frontend communicates with the backend using **REST APIs**.
@@ -437,6 +362,9 @@ Technologies used:
 
 - Node.js
 - Express.js
+
+## Database
+- MongoDB
 
 Backend responsibilities:
 
@@ -454,8 +382,106 @@ GET /lost-items
 POST /lost-items  
 GET /marketplace  
 POST /marketplace  
-GET /menu  
-POST /order  
+GET /menu    
 GET /notifications
 
+# Future Scope
+
+The application architecture supports future enhancements and scalability.
+
 ---
+
+
+## 1. Smart Canteen System
+
+Future implementation may include a **smart canteen pre-ordering system**.
+
+Students may be able to:
+
+- View canteen menus
+- Check item availability
+- Pre-order food
+- Reduce waiting time in queues
+
+### Payment Features
+
+The system may support:
+
+- Partial advance payment
+- Online payment integration
+- Queue optimization
+
+Example:
+
+Order Amount ₹100 → Advance Payment ₹50
+
+Students can collect food and pay the remaining amount at the canteen.
+
+---
+
+## 2. AI-Based Placement Experience Summarization
+
+If multiple students share interview experiences for the same company, AI can generate a summary of common interview patterns.
+
+Example:
+
+**Company: Amazon**
+
+Summary:
+
+- Focus on Data Structures
+- Difficult coding rounds
+- System design questions asked
+- Important preparation strategies
+
+This can help juniors prepare more effectively for placements.
+
+---
+
+## 3. Attendance Management Integration
+
+Future versions of the application may include an **attendance tracking system** integrated with the university database.
+
+Students may be able to:
+
+- View attendance percentage
+- Track subject-wise attendance
+- Receive shortage alerts
+- View attendance history
+
+Example:
+
+Attendance Alert:
+
+> Your attendance in DBMS is below 75%.
+
+This feature can help students monitor attendance and avoid shortages.
+
+---
+
+
+## 4. Personalized Notifications and Recommendations
+
+Future versions may include:
+
+- Smart alerts
+- Personalized announcements
+- Event recommendations
+- Placement-related suggestions
+- Study material recommendations
+
+This can improve student engagement and provide a personalized experience.
+
+---
+
+## 5. Dark Mode Support
+
+Future versions may include **theme customization**.
+
+Students may be able to:
+
+- Switch between Light Mode and Dark Mode
+- Personalize UI preferences
+- Improve accessibility and user experience
+
+
