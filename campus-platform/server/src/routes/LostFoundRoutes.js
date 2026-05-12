@@ -1,5 +1,5 @@
 const express = require("express");
-const router = express.Router();
+const router  = express.Router();
 
 const {
   createLostFoundItem,
@@ -7,18 +7,16 @@ const {
   viewItems,
   deleteItem,
 } = require("../controllers/LostFoundController");
+
 const protect = require("../middleware/authMiddleware");
 
-// @route   POST    /api/lostfound
-router.post("/", protect, createLostFoundItem);
+// ─── Routes ───────────────────────────────────────────────────────────────────
 
-// @route   GET     /api/lostfound
-router.get("/", protect, viewItems);
-
-// @route   PUT     /api/lostfound/:id
-router.put("/:id", protect, updateItem);
-
-// @route   DELETE  /api/lostfound/:id
+router.post  ("/",    protect, createLostFoundItem);
+router.get   ("/",    protect, viewItems);
+router.put   ("/:id", protect, updateItem);
 router.delete("/:id", protect, deleteItem);
+
+// ─── Export ───────────────────────────────────────────────────────────────────
 
 module.exports = router;
