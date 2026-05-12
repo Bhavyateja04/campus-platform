@@ -1,7 +1,10 @@
 module.exports = (io) => {
+
   io.on("connection", (socket) => {
 
-    socket.on("joinChat", (roomId) => {
+    console.log("User connected");
+
+    socket.on("joinRoom", (roomId) => {
       socket.join(roomId);
     });
 
@@ -10,4 +13,5 @@ module.exports = (io) => {
     });
 
   });
+
 };
