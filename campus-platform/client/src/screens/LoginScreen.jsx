@@ -1,63 +1,123 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
+  Alert,
   Animated,
   Dimensions,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
-  Image,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApi, setSession } from "../services/api";
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────
+
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
-const API_BASE_URL = "http://192.168.1.7:5000";
-
-const COLORS = {
-  background: "#1A0000",
-  card: "#2A0000",
-  inputBg: "#1F0000",
-  borderDefault: "#2A2A3E",
-  borderCard: "#4A0000",
-  borderInput: "#5A0000",
-  borderFocused: "#6C63FF",
-  primary: "#D00000",
-  primaryBright: "#FF3333",
-  primaryLight: "#FF4444",
-  white: "#FFFFFF",
-  textSubtitle: "#FFBBBB",
-  textLabel: "#CC6666",
-  textPlaceholder: "#4A4A6A",
-  textMuted: "#AAAACC",
-  orb1: "#D00000",
-  orb2: "#FF3333",
+const COLOR = {
+  background:       "#1A0000",
+  card:             "#2A0000",
+  inputBg:          "#1F0000",
+  borderDefault:    "#2A2A3E",
+  borderCard:       "#4A0000",
+  borderInput:      "#5A0000",
+  borderFocused:    "#6C63FF",
+  primary:          "#D00000",
+  primaryBright:    "#FF3333",
+  primaryLight:     "#FF4444",
+  white:            "#FFFFFF",
+  textSubtitle:     "#FFBBBB",
+  textLabel:        "#CC6666",
+  textPlaceholder:  "#4A4A6A",
+  textMuted:        "#AAAACC",
 };
 
 const ANIMATION = {
-  logoFriction: 5,
-  logoTension: 60,
-  logoSpinMs: 600,
-  contentFadeMs: 500,
-  slideFriction: 8,
-  slideTension: 50,
-  inputBorderMs: 200,
+  logoFriction:    5,
+  logoTension:     60,
+  logoSpinMs:      600,
+  contentFadeMs:   500,
+  slideFriction:   8,
+  slideTension:    50,
+  inputBorderMs:   200,
 };
 
-// ─── Sub-components ────────────────────────────────────────────────────────────
-const AnimatedButton = ({ onPress, loading }) => {
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+
+function validateLoginInputs(email, password) {
+  if (!email.trim()) return "Please enter your university email.";
+  if (!password)     return "Please enter your password.";
+  return null;
+}
+
+// ─────────────────────────────────────────────
+// SUB-COMPONENTS
+// ─────────────────────────────────────────────
+
+function BackgroundOrbs() {
+  return (
+    <>
+      <View style={S.orb1} />
+      <View style={S.orb2} />
+      <View style={S.orb3} />
+    </>
+  );
+}
+
+function LogoSection({ scale, spin, opacity }) {
+  return (
+    <Animated.View
+      style={[S.logoContainer, { transform: [{ scale }, { rotate: spin }], opacity }]}
+    >
+      <View style={S.logoRing}>
+        <Image
+          source={require("../../assets/pic1.png")}
+          style={S.logo}
+          resizeMode="contain"
+        />
+      </View>
+    </Animated.View>
+  );
+}
+
+function TitleSection({ opacity, translateY }) {
+  return (
+    <Animated.View style={[S.titleBlock, { opacity, transform: [{ translateY }] }]}>
+      <Text style={S.appTitle}>Campus System</Text>
+      <View style={S.titleAccent} />
+      <Text style={S.subtitle}>
+        Welcome back, please login{"\n"}to your account.
+      </Text>
+    </Animated.View>
+  );
+}
+
+function OrDivider() {
+  return (
+    <View style={S.dividerRow}>
+      <View style={S.dividerLine} />
+      <Text style={S.dividerText}>OR</Text>
+      <View style={S.dividerLine} />
+    </View>
+  );
+}
+
+function AnimatedLoginButton({ onPress, loading }) {
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () =>
     Animated.spring(scale, { toValue: 0.97, useNativeDriver: true }).start();
+
   const handlePressOut = () =>
     Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
 
@@ -69,19 +129,19 @@ const AnimatedButton = ({ onPress, loading }) => {
         onPressOut={handlePressOut}
         activeOpacity={1}
         disabled={loading}
-        style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
+        style={[S.loginButton, loading && S.loginButtonDisabled]}
       >
-        <View style={styles.loginBtnGradient}>
-          <Text style={styles.loginBtnText}>
+        <View style={S.loginButtonInner}>
+          <Text style={S.loginButtonText}>
             {loading ? "⏳  Logging in..." : "Login"}
           </Text>
         </View>
       </TouchableOpacity>
     </Animated.View>
   );
-};
+}
 
-const InputField = ({
+function InputField({
   icon,
   placeholder,
   value,
@@ -90,39 +150,41 @@ const InputField = ({
   keyboardType = "default",
   rightIcon,
   onRightIconPress,
-}) => {
+}) {
   const [isFocused, setIsFocused] = useState(false);
   const borderAnim = useRef(new Animated.Value(0)).current;
 
-  const animateBorder = (toValue) =>
+  function animateBorder(toValue) {
     Animated.timing(borderAnim, {
       toValue,
       duration: ANIMATION.inputBorderMs,
       useNativeDriver: false,
     }).start();
+  }
 
-  const handleFocus = () => {
+  function handleFocus() {
     setIsFocused(true);
     animateBorder(1);
-  };
-  const handleBlur = () => {
+  }
+
+  function handleBlur() {
     setIsFocused(false);
     animateBorder(0);
-  };
+  }
 
   const borderColor = borderAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [COLORS.borderDefault, COLORS.borderFocused],
+    inputRange:  [0, 1],
+    outputRange: [COLOR.borderDefault, COLOR.borderFocused],
   });
 
   const shadowOpacity = borderAnim.interpolate({
-    inputRange: [0, 1],
+    inputRange:  [0, 1],
     outputRange: [0, 0.3],
   });
 
   const focusedShadow = isFocused
     ? {
-        shadowColor: COLORS.borderFocused,
+        shadowColor:  COLOR.borderFocused,
         shadowOpacity,
         shadowRadius: 8,
         shadowOffset: { width: 0, height: 0 },
@@ -131,16 +193,12 @@ const InputField = ({
     : {};
 
   return (
-    <Animated.View
-      style={[styles.inputWrapper, { borderColor }, focusedShadow]}
-    >
-      <Text style={[styles.inputIcon, isFocused && styles.inputIconFocused]}>
-        {icon}
-      </Text>
+    <Animated.View style={[S.inputWrapper, { borderColor }, focusedShadow]}>
+      <Text style={[S.inputIcon, isFocused && S.inputIconFocused]}>{icon}</Text>
       <TextInput
-        style={styles.input}
+        style={S.input}
         placeholder={placeholder}
-        placeholderTextColor={COLORS.textPlaceholder}
+        placeholderTextColor={COLOR.textPlaceholder}
         value={value}
         onChangeText={onChangeText}
         secureTextEntry={secureTextEntry}
@@ -151,73 +209,31 @@ const InputField = ({
         autoCorrect={false}
       />
       {rightIcon && (
-        <TouchableOpacity onPress={onRightIconPress} style={styles.eyeBtn}>
-          <Text style={styles.eyeIcon}>{rightIcon}</Text>
+        <TouchableOpacity onPress={onRightIconPress} style={S.eyeButton}>
+          <Text style={S.eyeIcon}>{rightIcon}</Text>
         </TouchableOpacity>
       )}
     </Animated.View>
   );
-};
+}
 
-const BackgroundOrbs = () => (
-  <>
-    <View style={styles.orb1} />
-    <View style={styles.orb2} />
-    <View style={styles.orb3} />
-  </>
-);
+// ─────────────────────────────────────────────
+// MAIN SCREEN
+// ─────────────────────────────────────────────
 
-const LogoSection = ({ scale, spin, opacity }) => (
-  <Animated.View
-    style={[
-      styles.logoContainer,
-      { transform: [{ scale }, { rotate: spin }], opacity },
-    ]}
-  >
-    <View style={styles.logoRing}>
-      <Image
-        source={require("../../assets/pic1.png")}
-        style={styles.logo}
-        resizeMode="contain"
-      />
-    </View>
-  </Animated.View>
-);
-
-const TitleSection = ({ opacity, translateY }) => (
-  <Animated.View
-    style={[styles.titleBlock, { opacity, transform: [{ translateY }] }]}
-  >
-    <Text style={styles.appTitle}>Campus System</Text>
-    <View style={styles.titleAccent} />
-    <Text style={styles.subtitle}>
-      Welcome back, please login{"\n"}to your account.
-    </Text>
-  </Animated.View>
-);
-
-const Divider = () => (
-  <View style={styles.dividerRow}>
-    <View style={styles.dividerLine} />
-    <Text style={styles.dividerText}>OR</Text>
-    <View style={styles.dividerLine} />
-  </View>
-);
-
-// ─── Main Screen ───────────────────────────────────────────────────────────────
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [showPwd, setShowPwd] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading]   = useState(false);
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const logoScale = useRef(new Animated.Value(0.6)).current;
-  const logoSpin = useRef(new Animated.Value(0)).current;
+  const logoSpin  = useRef(new Animated.Value(0)).current;
 
-  const spin = logoSpin.interpolate({
-    inputRange: [0, 1],
+  const spinInterpolation = logoSpin.interpolate({
+    inputRange:  [0, 1],
     outputRange: ["0deg", "360deg"],
   });
 
@@ -225,101 +241,91 @@ export default function LoginScreen({ navigation }) {
     Animated.sequence([
       Animated.parallel([
         Animated.spring(logoScale, {
-          toValue: 1,
+          toValue:  1,
           friction: ANIMATION.logoFriction,
-          tension: ANIMATION.logoTension,
+          tension:  ANIMATION.logoTension,
           useNativeDriver: true,
         }),
         Animated.timing(logoSpin, {
-          toValue: 1,
+          toValue:  1,
           duration: ANIMATION.logoSpinMs,
           useNativeDriver: true,
         }),
       ]),
       Animated.parallel([
         Animated.timing(fadeAnim, {
-          toValue: 1,
+          toValue:  1,
           duration: ANIMATION.contentFadeMs,
           useNativeDriver: true,
         }),
         Animated.spring(slideAnim, {
-          toValue: 0,
+          toValue:  0,
           friction: ANIMATION.slideFriction,
-          tension: ANIMATION.slideTension,
+          tension:  ANIMATION.slideTension,
           useNativeDriver: true,
         }),
       ]),
     ]).start();
   }, []);
 
-  const handleLogin = async () => {
-    if (!email.trim()) {
-      Alert.alert("Missing Field", "Please enter your university email.");
-      return;
-    }
-
-    if (!password) {
-      Alert.alert("Missing Field", "Please enter your password.");
+  async function handleLogin() {
+    const validationError = validateLoginInputs(email, password);
+    if (validationError) {
+      Alert.alert("Missing Field", validationError);
       return;
     }
 
     setLoading(true);
-
     try {
       const data = await authApi.login({ email: email.trim(), password });
-
       if (data?.token) {
         await setSession({ token: data.token, role: data.role });
         navigation.reset({ index: 0, routes: [{ name: "Home" }] });
       } else {
-        Alert.alert("Login failed", data?.message || "Invalid credentials");
+        Alert.alert("Login Failed", data?.message ?? "Invalid credentials.");
       }
     } catch (err) {
       Alert.alert(
-        "Login failed",
-        err?.message ||
-          "Network error. Verify the backend is running and API_BASE_URL is reachable.",
+        "Login Failed",
+        err?.message ?? "Network error. Verify the backend is running and reachable."
       );
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleGuestMode = async () => {
+  async function handleGuestMode() {
     try {
       await AsyncStorage.setItem("guest_mode", "true");
       navigation.reset({ index: 0, routes: [{ name: "GuestHome" }] });
-    } catch (err) {
-      Alert.alert("Error", "Failed to enter guest mode");
+    } catch {
+      Alert.alert("Error", "Failed to enter guest mode.");
     }
-  };
+  }
+
+  const cardAnim = { opacity: fadeAnim, transform: [{ translateY: slideAnim }] };
 
   return (
     <KeyboardAvoidingView
-      style={styles.flex}
+      style={S.flex}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+      <StatusBar barStyle="light-content" backgroundColor={COLOR.background} />
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={S.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.container}>
+        <View style={S.container}>
           <BackgroundOrbs />
 
-          <LogoSection scale={logoScale} spin={spin} opacity={fadeAnim} />
+          <LogoSection scale={logoScale} spin={spinInterpolation} opacity={fadeAnim} />
 
           <TitleSection opacity={fadeAnim} translateY={slideAnim} />
 
-          <Animated.View
-            style={[
-              styles.card,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
-            <Text style={styles.fieldLabel}>University Email</Text>
+          <Animated.View style={[S.card, cardAnim]}>
+            <Text style={S.fieldLabel}>University Email</Text>
             <InputField
               icon="✉️"
               placeholder="yourname@university.edu"
@@ -328,61 +334,56 @@ export default function LoginScreen({ navigation }) {
               keyboardType="email-address"
             />
 
-            <View style={styles.spacer} />
+            <View style={S.fieldSpacer} />
 
-            <Text style={styles.fieldLabel}>Password</Text>
+            <Text style={S.fieldLabel}>Password</Text>
             <InputField
               icon="🔒"
               placeholder="Enter your password"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry={!showPwd}
-              rightIcon={showPwd ? "🙈" : "👁️"}
-              onRightIconPress={() => setShowPwd((prev) => !prev)}
+              secureTextEntry={!showPassword}
+              rightIcon={showPassword ? "🙈" : "👁️"}
+              onRightIconPress={() => setShowPassword((prev) => !prev)}
             />
 
             <TouchableOpacity
-              style={styles.forgotRow}
+              style={S.forgotPasswordRow}
               onPress={() => navigation.navigate("ForgotPassword")}
             >
-              <Text style={styles.forgotText}>Forgot Password?</Text>
+              <Text style={S.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
 
-            <AnimatedButton onPress={handleLogin} loading={loading} />
+            <AnimatedLoginButton onPress={handleLogin} loading={loading} />
 
-            <Divider />
+            <OrDivider />
 
-            <TouchableOpacity style={styles.ssoBtn}>
-              <Text style={styles.ssoBtnText}>
-                🏛️ Sign in with University SSO
-              </Text>
+            <TouchableOpacity style={S.ssoButton}>
+              <Text style={S.ssoButtonText}>🏛️ Sign in with University SSO</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.forgotRow}
+              style={S.forgotPasswordRow}
               onPress={() => navigation.navigate("Register")}
             >
-              <Text style={styles.forgotText}>
+              <Text style={S.forgotPasswordText}>
                 New here?{" "}
-                <Text style={{ fontWeight: "800" }}>Create an account</Text>
+                <Text style={S.registerLink}>Create an account</Text>
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.ssoBtn,
-                { backgroundColor: COLORS.borderDefault, marginTop: 12 },
-              ]}
+              style={[S.ssoButton, S.guestButton]}
               onPress={handleGuestMode}
             >
-              <Text style={styles.ssoBtnText}>👤 Continue as Guest</Text>
+              <Text style={S.ssoButtonText}>👤 Continue as Guest</Text>
             </TouchableOpacity>
           </Animated.View>
 
           <Animated.View style={{ opacity: fadeAnim }}>
-            <Text style={styles.footer}>
+            <Text style={S.footer}>
               Need help?{" "}
-              <Text style={styles.footerLink}>Contact IT Support</Text>
+              <Text style={S.footerLink}>Contact IT Support</Text>
             </Text>
           </Animated.View>
         </View>
@@ -391,19 +392,22 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-// ─── Styles ────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  // Layout
+// ─────────────────────────────────────────────
+// STYLES
+// ─────────────────────────────────────────────
+
+const S = StyleSheet.create({
+  // ── Layout ──────────────────────────────────
   flex: {
     flex: 1,
   },
-  scroll: {
+  scrollContent: {
     flexGrow: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLOR.background,
   },
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLOR.background,
     alignItems: "center",
     paddingHorizontal: 24,
     paddingTop: 64,
@@ -411,13 +415,13 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
 
-  // Background orbs
+  // ── Background Orbs ──────────────────────────
   orb1: {
     position: "absolute",
     width: 360,
     height: 360,
     borderRadius: 180,
-    backgroundColor: COLORS.orb1,
+    backgroundColor: COLOR.primary,
     opacity: 0.07,
     top: -120,
     right: -120,
@@ -427,7 +431,7 @@ const styles = StyleSheet.create({
     width: 280,
     height: 280,
     borderRadius: 140,
-    backgroundColor: COLORS.orb2,
+    backgroundColor: COLOR.primaryBright,
     opacity: 0.05,
     bottom: 80,
     left: -80,
@@ -437,13 +441,13 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 80,
-    backgroundColor: COLORS.orb1,
+    backgroundColor: COLOR.primary,
     opacity: 0.04,
     top: "40%",
     left: "5%",
   },
 
-  // Logo
+  // ── Logo ─────────────────────────────────────
   logoContainer: {
     marginBottom: 28,
   },
@@ -452,11 +456,11 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: 48,
     borderWidth: 2,
-    borderColor: COLORS.primary,
+    borderColor: COLOR.primary,
     alignItems: "center",
     justifyContent: "center",
     padding: 6,
-    shadowColor: COLORS.primary,
+    shadowColor: COLOR.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
@@ -467,7 +471,7 @@ const styles = StyleSheet.create({
     height: 60,
   },
 
-  // Title
+  // ── Title ─────────────────────────────────────
   titleBlock: {
     alignItems: "center",
     marginBottom: 32,
@@ -476,7 +480,7 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
     fontSize: 32,
     fontWeight: "800",
-    color: COLORS.white,
+    color: COLOR.white,
     letterSpacing: 0.5,
     marginBottom: 10,
   },
@@ -484,25 +488,25 @@ const styles = StyleSheet.create({
     width: 48,
     height: 3,
     borderRadius: 2,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLOR.primary,
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 14,
-    color: COLORS.textSubtitle,
+    color: COLOR.textSubtitle,
     textAlign: "center",
     lineHeight: 22,
   },
 
-  // Card
+  // ── Card ─────────────────────────────────────
   card: {
     width: "100%",
-    backgroundColor: COLORS.card,
+    backgroundColor: COLOR.card,
     borderRadius: 24,
     padding: 24,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: COLORS.borderCard,
+    borderColor: COLOR.borderCard,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.45,
@@ -512,21 +516,24 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 11,
     fontWeight: "700",
-    color: COLORS.textLabel,
+    color: COLOR.textLabel,
     letterSpacing: 1,
     textTransform: "uppercase",
     marginBottom: 8,
     marginLeft: 2,
   },
+  fieldSpacer: {
+    height: 16,
+  },
 
-  // Input
+  // ── Input Field ──────────────────────────────
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.inputBg,
+    backgroundColor: COLOR.inputBg,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: COLORS.borderInput,
+    borderColor: COLOR.borderInput,
     paddingHorizontal: 14,
     height: 56,
   },
@@ -540,64 +547,61 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: COLORS.white,
+    color: COLOR.white,
     fontSize: 15,
     fontWeight: "500",
   },
-  eyeBtn: {
+  eyeButton: {
     padding: 4,
   },
   eyeIcon: {
     fontSize: 18,
     opacity: 0.55,
   },
-  spacer: {
-    height: 16,
-  },
 
-  // Forgot password
-  forgotRow: {
+  // ── Forgot Password ──────────────────────────
+  forgotPasswordRow: {
     alignSelf: "flex-end",
     marginTop: 12,
     marginBottom: 24,
   },
-  forgotText: {
-    color: COLORS.primaryLight,
+  forgotPasswordText: {
+    color: COLOR.primaryLight,
     fontSize: 13,
     fontWeight: "600",
     letterSpacing: 0.2,
   },
 
-  // Login button
-  loginBtn: {
+  // ── Login Button ─────────────────────────────
+  loginButton: {
     borderRadius: 16,
     overflow: "hidden",
-    shadowColor: COLORS.primary,
+    shadowColor: COLOR.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.5,
     shadowRadius: 16,
     elevation: 10,
   },
-  loginBtnDisabled: {
+  loginButtonDisabled: {
     opacity: 0.65,
   },
-  loginBtnGradient: {
-    backgroundColor: COLORS.primary,
+  loginButtonInner: {
+    backgroundColor: COLOR.primary,
     paddingVertical: 17,
     alignItems: "center",
     borderRadius: 16,
     borderTopWidth: 1,
-    borderTopColor: COLORS.primaryLight,
+    borderTopColor: COLOR.primaryLight,
   },
-  loginBtnText: {
-    color: COLORS.white,
+  loginButtonText: {
+    color: COLOR.white,
     fontSize: 16,
     fontWeight: "700",
     letterSpacing: 1.5,
     textTransform: "uppercase",
   },
 
-  // Divider
+  // ── OR Divider ───────────────────────────────
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -606,39 +610,48 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: COLORS.borderInput,
+    backgroundColor: COLOR.borderInput,
   },
   dividerText: {
-    color: COLORS.textLabel,
+    color: COLOR.textLabel,
     fontSize: 12,
     fontWeight: "600",
     marginHorizontal: 12,
     letterSpacing: 1,
   },
 
-  // SSO button
-  ssoBtn: {
+  // ── SSO / Guest Buttons ──────────────────────
+  ssoButton: {
     borderWidth: 1.5,
-    borderColor: COLORS.borderInput,
+    borderColor: COLOR.borderInput,
     borderRadius: 14,
     paddingVertical: 15,
     alignItems: "center",
-    backgroundColor: COLORS.inputBg,
+    backgroundColor: COLOR.inputBg,
   },
-  ssoBtnText: {
-    color: COLORS.textMuted,
+  ssoButtonText: {
+    color: COLOR.textMuted,
     fontSize: 14,
     fontWeight: "600",
   },
+  guestButton: {
+    backgroundColor: COLOR.borderDefault,
+    marginTop: 12,
+  },
 
-  // Footer
+  // ── Register Link ─────────────────────────────
+  registerLink: {
+    fontWeight: "800",
+  },
+
+  // ── Footer ───────────────────────────────────
   footer: {
-    color: COLORS.textLabel,
+    color: COLOR.textLabel,
     fontSize: 13,
     textAlign: "center",
   },
   footerLink: {
-    color: COLORS.primaryLight,
+    color: COLOR.primaryLight,
     fontWeight: "600",
   },
 });
