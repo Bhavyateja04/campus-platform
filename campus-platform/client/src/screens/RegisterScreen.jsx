@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  StatusBar, KeyboardAvoidingView, Platform, ScrollView, Alert,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   ActivityIndicator,
 } from 'react-native';
-
 import { authApi, setSession } from '../services/api';
+
+// ─────────────────────────────────────────────────────────
+//  Constants
+// ─────────────────────────────────────────────────────────
 
 const C = {
   bg:          '#1A0000',
@@ -23,7 +33,19 @@ const C = {
 
 const ALLOWED_DOMAINS = /@(acet|aec|aus)\.ac\.in$/i;
 
-function Field({ label, value, onChangeText, placeholder, secure = false, keyboardType = 'default', autoCapitalize = 'none' }) {
+// ─────────────────────────────────────────────────────────
+//  Component — Form Field
+// ─────────────────────────────────────────────────────────
+
+function Field({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  secure        = false,
+  keyboardType  = 'default',
+  autoCapitalize = 'none',
+}) {
   return (
     <View style={{ marginBottom: 14 }}>
       <Text style={s.fieldLabel}>{label}</Text>
@@ -42,34 +64,49 @@ function Field({ label, value, onChangeText, placeholder, secure = false, keyboa
   );
 }
 
+// ─────────────────────────────────────────────────────────
+//  Screen — Register
+// ─────────────────────────────────────────────────────────
+
 export default function RegisterScreen({ navigation }) {
-  const [name,        setName]        = useState('');
-  const [email,       setEmail]       = useState('');
-  const [rollNumber,  setRollNumber]  = useState('');
-  const [phone,       setPhone]       = useState('');
-  const [department,  setDepartment]  = useState('');
-  const [password,    setPassword]    = useState('');
-  const [confirmPwd,  setConfirmPwd]  = useState('');
-  const [loading,     setLoading]     = useState(false);
-  const [err,         setErr]         = useState('');
+  const [name,       setName]       = useState('');
+  const [email,      setEmail]      = useState('');
+  const [rollNumber, setRollNumber] = useState('');
+  const [phone,      setPhone]      = useState('');
+  const [department, setDepartment] = useState('');
+  const [password,   setPassword]   = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [loading,    setLoading]    = useState(false);
+  const [err,        setErr]        = useState('');
+
+  // ── Validation & Submit ────────────────────────────────
 
   const onRegister = async () => {
     setErr('');
-    if (!name.trim())                          return setErr('Please enter your full name.');
+
+    if (!name.trim())
+      return setErr('Please enter your full name.');
+
     if (!email.trim() || !ALLOWED_DOMAINS.test(email.trim()))
       return setErr('Email must end with @acet.ac.in, @aec.ac.in, or @aus.ac.in');
-    if (!rollNumber.trim())                    return setErr('Please enter your roll number.');
-    if (!password || password.length < 6)      return setErr('Password must be at least 6 characters.');
-    if (password !== confirmPwd)               return setErr('Passwords do not match.');
+
+    if (!rollNumber.trim())
+      return setErr('Please enter your roll number.');
+
+    if (!password || password.length < 6)
+      return setErr('Password must be at least 6 characters.');
+
+    if (password !== confirmPwd)
+      return setErr('Passwords do not match.');
 
     setLoading(true);
     try {
       const data = await authApi.register({
-        name: name.trim(),
-        email: email.trim(),
+        name:       name.trim(),
+        email:      email.trim(),
         rollNumber: rollNumber.trim(),
         password,
-        phone: phone.trim() || undefined,
+        phone:      phone.trim()      || undefined,
         department: department.trim() || undefined,
       });
 
@@ -86,50 +123,201 @@ export default function RegisterScreen({ navigation }) {
     }
   };
 
+  // ── Render ─────────────────────────────────────────────
+
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <StatusBar barStyle="light-content" backgroundColor={C.bg} />
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+      <ScrollView
+        contentContainerStyle={s.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={s.container}>
+
+          {/* Title */}
           <Text style={s.title}>Create your account</Text>
-          <Text style={s.subtitle}>Aditya University students only — use your @aus.ac.in / @aec.ac.in / @acet.ac.in email.</Text>
+          <Text style={s.subtitle}>
+            Aditya University students only — use your @aus.ac.in / @aec.ac.in / @acet.ac.in email.
+          </Text>
 
+          {/* Form card */}
           <View style={s.card}>
-            <Field label="Full Name"        value={name}       onChangeText={setName}       placeholder="e.g. Varshitha Reddy" autoCapitalize="words" />
-            <Field label="University Email" value={email}      onChangeText={setEmail}      placeholder="varshitha@aus.ac.in"   keyboardType="email-address" />
-            <Field label="Roll Number"      value={rollNumber} onChangeText={setRollNumber} placeholder="22CSE1042" />
-            <Field label="Phone (optional)" value={phone}      onChangeText={setPhone}      placeholder="9876543210" keyboardType="phone-pad" />
-            <Field label="Department (optional)" value={department} onChangeText={setDepartment} placeholder="CSE" autoCapitalize="characters" />
-            <Field label="Password (min 6 chars)" value={password}   onChangeText={setPassword}   placeholder="••••••••" secure />
-            <Field label="Confirm Password"        value={confirmPwd} onChangeText={setConfirmPwd} placeholder="••••••••" secure />
+            <Field
+              label="Full Name"
+              value={name}
+              onChangeText={setName}
+              placeholder="e.g. Varshitha Reddy"
+              autoCapitalize="words"
+            />
+            <Field
+              label="University Email"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="varshitha@aus.ac.in"
+              keyboardType="email-address"
+            />
+            <Field
+              label="Roll Number"
+              value={rollNumber}
+              onChangeText={setRollNumber}
+              placeholder="22CSE1042"
+            />
+            <Field
+              label="Phone (optional)"
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="9876543210"
+              keyboardType="phone-pad"
+            />
+            <Field
+              label="Department (optional)"
+              value={department}
+              onChangeText={setDepartment}
+              placeholder="CSE"
+              autoCapitalize="characters"
+            />
+            <Field
+              label="Password (min 6 chars)"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              secure
+            />
+            <Field
+              label="Confirm Password"
+              value={confirmPwd}
+              onChangeText={setConfirmPwd}
+              placeholder="••••••••"
+              secure
+            />
 
+            {/* Error message */}
             {!!err && <Text style={s.err}>{err}</Text>}
 
-            <TouchableOpacity style={s.btn} onPress={onRegister} disabled={loading} activeOpacity={0.85}>
+            {/* Submit button */}
+            <TouchableOpacity
+              style={s.btn}
+              onPress={onRegister}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
               {loading
                 ? <ActivityIndicator color="#fff" />
-                : <Text style={s.btnText}>Create Account</Text>}
+                : <Text style={s.btnText}>Create Account</Text>
+              }
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => navigation.navigate('Login')} style={{ marginTop: 16, alignSelf: 'center' }}>
-              <Text style={{ color: C.grey1 }}>Already have an account? <Text style={{ fontWeight: '800', color: C.white }}>Log in</Text></Text>
+            {/* Login link */}
+            <TouchableOpacity
+              style={s.loginLink}
+              onPress={() => navigation.navigate('Login')}
+            >
+              <Text style={s.loginLinkText}>
+                Already have an account?{' '}
+                <Text style={s.loginLinkBold}>Log in</Text>
+              </Text>
             </TouchableOpacity>
           </View>
+
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
+// ─────────────────────────────────────────────────────────
+//  Styles
+// ─────────────────────────────────────────────────────────
+
 const s = StyleSheet.create({
-  scroll:    { flexGrow: 1, backgroundColor: C.bg },
-  container: { flex: 1, paddingHorizontal: 22, paddingTop: 64, paddingBottom: 40 },
-  title:     { color: C.white, fontSize: 26, fontWeight: '900' },
-  subtitle:  { color: C.grey1, fontSize: 13, marginTop: 6, marginBottom: 22 },
-  card:      { backgroundColor: C.card, borderColor: C.cardBorder, borderWidth: 1, borderRadius: 18, padding: 18 },
-  fieldLabel:{ color: C.grey1, fontSize: 12, fontWeight: '700', marginBottom: 6 },
-  input:     { backgroundColor: C.input, borderColor: C.inputBorder, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: Platform.OS === 'ios' ? 14 : 10, color: C.white, fontSize: 15 },
-  err:       { color: C.red, marginTop: 4, marginBottom: 8, fontSize: 13 },
-  btn:       { backgroundColor: C.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
-  btnText:   { color: C.white, fontWeight: '800', fontSize: 15 },
+  scroll: {
+    flexGrow:        1,
+    backgroundColor: C.bg,
+  },
+
+  container: {
+    flex:              1,
+    paddingHorizontal: 22,
+    paddingTop:        64,
+    paddingBottom:     40,
+  },
+
+  title: {
+    color:      C.white,
+    fontSize:   26,
+    fontWeight: '900',
+  },
+
+  subtitle: {
+    color:        C.grey1,
+    fontSize:     13,
+    marginTop:    6,
+    marginBottom: 22,
+  },
+
+  card: {
+    backgroundColor: C.card,
+    borderColor:     C.cardBorder,
+    borderWidth:     1,
+    borderRadius:    18,
+    padding:         18,
+  },
+
+  fieldLabel: {
+    color:        C.grey1,
+    fontSize:     12,
+    fontWeight:   '700',
+    marginBottom: 6,
+  },
+
+  input: {
+    backgroundColor:  C.input,
+    borderColor:      C.inputBorder,
+    borderWidth:      1,
+    borderRadius:     12,
+    paddingHorizontal: 14,
+    paddingVertical:  Platform.OS === 'ios' ? 14 : 10,
+    color:            C.white,
+    fontSize:         15,
+  },
+
+  err: {
+    color:        C.red,
+    marginTop:    4,
+    marginBottom: 8,
+    fontSize:     13,
+  },
+
+  btn: {
+    backgroundColor: C.primary,
+    borderRadius:    12,
+    paddingVertical: 14,
+    alignItems:      'center',
+    marginTop:       8,
+  },
+
+  btnText: {
+    color:      C.white,
+    fontWeight: '800',
+    fontSize:   15,
+  },
+
+  loginLink: {
+    marginTop:  16,
+    alignSelf:  'center',
+  },
+
+  loginLinkText: {
+    color: C.grey1,
+  },
+
+  loginLinkBold: {
+    fontWeight: '800',
+    color:      C.white,
+  },
 });
