@@ -1,11 +1,22 @@
 const mongoose = require("mongoose");
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const VALIDATION = {
+  MESSAGES: {
+    TITLE_REQUIRED:  "Title is required",
+    AUTHOR_REQUIRED: "Author is required",
+  },
+};
+
+// ─── Schema ───────────────────────────────────────────────────────────────────
+
 const CommunitySchema = new mongoose.Schema(
   {
     title: {
-      type: String,
-      required: [true, "Title is required"],
-      trim: true,
+      type:     String,
+      required: [true, VALIDATION.MESSAGES.TITLE_REQUIRED],
+      trim:     true,
     },
     content: {
       type: String,
@@ -16,14 +27,16 @@ const CommunitySchema = new mongoose.Schema(
       trim: true,
     },
     authorId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: [true, "Author is required"],
+      type:     mongoose.Schema.Types.ObjectId,
+      ref:      "User",
+      required: [true, VALIDATION.MESSAGES.AUTHOR_REQUIRED],
     },
   },
   {
-    timestamps: true, // Auto-manages createdAt & updatedAt
-  }
+    timestamps: true,
+  },
 );
+
+// ─── Export ───────────────────────────────────────────────────────────────────
 
 module.exports = mongoose.model("Community", CommunitySchema);
