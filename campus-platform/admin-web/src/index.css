@@ -1,13 +1,20 @@
+/* ============================================================================
+   GLOBAL STYLES
+   ============================================================================ */
+
 :root {
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
   color-scheme: light dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
+
+/* ============================================================================
+   HTML & BODY
+   ============================================================================ */
 
 html {
   scroll-behavior: smooth;
@@ -16,6 +23,10 @@ html {
 body {
   min-width: 320px;
 }
+
+/* ============================================================================
+   ROOT APPLICATION
+   ============================================================================ */
 
 #root {
   min-height: 100vh;
