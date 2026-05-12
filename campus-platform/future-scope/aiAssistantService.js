@@ -10,5 +10,13 @@ class AssistantService {
     };
   }
 }
+router.post("/ask", async (req, res) => {
 
+  const { question } = req.body;
+
+  res.json({
+    answer: `AI assistant response for: ${question}`,
+  });
+
+});
 module.exports = new AssistantService();
