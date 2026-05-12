@@ -1,5 +1,5 @@
 const express = require("express");
-const router = express.Router();
+const router  = express.Router();
 
 const {
   addClub,
@@ -9,19 +9,14 @@ const {
   deleteClub,
 } = require("../controllers/clubsController");
 
-// @route   POST    /api/clubs
-router.post("/", addClub);
+// ─── Routes ───────────────────────────────────────────────────────────────────
 
-// @route   GET     /api/clubs
-router.get("/", getClubs);
-
-// @route   GET     /api/clubs/:clubId
-router.get("/:clubId", getClubById);
-
-// @route   PATCH   /api/clubs/:clubId
-router.patch("/:clubId", updateClub);
-
-// @route   DELETE  /api/clubs/:clubId
+router.post  ("/",        addClub);
+router.get   ("/",        getClubs);
+router.get   ("/:clubId", getClubById);
+router.patch ("/:clubId", updateClub);
 router.delete("/:clubId", deleteClub);
+
+// ─── Export ───────────────────────────────────────────────────────────────────
 
 module.exports = router;
