@@ -1,28 +1,84 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const NOTIFICATION_TYPES    = ["Academic", "Events", "Clubs", "System"];
+const NOTIFICATION_AUDIENCES = ["all", "user"];
+
+const NOTIFICATION_DEFAULTS = {
+  TYPE:     "System",
+  ICON:     "notifications-outline",
+  COLOR:    "#4A6FA5",
+  AUDIENCE: "all",
+};
+
+const VALIDATION = {
+  MESSAGES: {
+    TITLE_REQUIRED:    "Title is required",
+    BODY_REQUIRED:     "Body is required",
+    TYPE_INVALID:      `Type must be one of: ${NOTIFICATION_TYPES.join(", ")}`,
+    AUDIENCE_INVALID:  `Audience must be one of: ${NOTIFICATION_AUDIENCES.join(", ")}`,
+  },
+};
+
+// ─── Schema ───────────────────────────────────────────────────────────────────
 
 const NotificationSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    body:  { type: String, required: true },
-    type:  {
-      type: String,
-      enum: ['Academic', 'Events', 'Clubs', 'System'],
-      default: 'System',
+    title: {
+      type:     String,
+      required: [true, VALIDATION.MESSAGES.TITLE_REQUIRED],
+      trim:     true,
     },
-    icon:  { type: String, default: 'notifications-outline' },
-    color: { type: String, default: '#4A6FA5' },
-
-    // Audience: if `audience === 'all'` every authenticated user sees it.
-    // If `audience === 'user'` only the user in `audienceUserId` sees it.
-    audience:        { type: String, enum: ['all', 'user'], default: 'all' },
-    audienceUserId:  { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-
-    // List of user ids that have already marked this notification as read.
-    readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    body: {
+      type:     String,
+      required: [true, VALIDATION.MESSAGES.BODY_REQUIRED],
+      trim:     true,
+    },
+    type: {
+      type:    String,
+      enum:    {
+        values:  NOTIFICATION_TYPES,
+        message: VALIDATION.MESSAGES.TYPE_INVALID,
+      },
+      default: NOTIFICATION_DEFAULTS.TYPE,
+    },
+    icon: {
+      type:    String,
+      trim:    true,
+      default: NOTIFICATION_DEFAULTS.ICON,
+    },
+    color: {
+      type:    String,
+      trim:    true,
+      default: NOTIFICATION_DEFAULTS.COLOR,
+    },
+    audience: {
+      type:    String,
+      enum:    {
+        values:  NOTIFICATION_AUDIENCES,
+        message: VALIDATION.MESSAGES.AUDIENCE_INVALID,
+      },
+      default: NOTIFICATION_DEFAULTS.AUDIENCE,
+    },
+    audienceUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref:  "User",
+    },
+    readBy: {
+      type:    [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+      default: [],
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  },
 );
+
+// ─── Indexes ──────────────────────────────────────────────────────────────────
 
 NotificationSchema.index({ audience: 1, audienceUserId: 1, createdAt: -1 });
 
-module.exports = mongoose.model('Notification', NotificationSchema);
+// ─── Export ───────────────────────────────────────────────────────────────────
+
+module.exports = mongoose.model("Notification", NotificationSchema);
