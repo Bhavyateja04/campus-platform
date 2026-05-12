@@ -1,15 +1,10 @@
-import React from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  StatusBar,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
+import React, { Component, useState, useEffect, useRef, useMemo } from "react";
+import { StyleSheet, Text, Button, View } from "react-native";
+import MapView, { Marker, Polyline } from "react-native-maps";
+import MapViewDirections from "react-native-maps-directions";
+import * as Location from "expo-location";
+import { GOOGLE_MAPS_APIKEY } from "../utils/constants";
+import { useRoute } from "@react-navigation/native";
 
 // ─────────────────────────────────────────────
 // CONSTANTS
@@ -104,13 +99,14 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    paddingHorizontal: 18,
-    paddingVertical: 18,
+    justifyContent: "center",
   },
-  backBtn: {
-    width: 40,
-    height: 40,
+  bottomCard: {
+    position: "absolute",
+    bottom: 20,
+    left: 15,
+    right: 15,
+    backgroundColor: "white",
     borderRadius: 20,
     backgroundColor: "rgba(255,255,255,0.18)",
     alignItems: "center",
@@ -139,23 +135,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 18,
     padding: 18,
-    borderWidth: 1,
-    borderColor: "#D6E4F0",
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
   },
-  mapBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: "#4A6FA5",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  mapHeadline: {
+
+  destinationText: {
     fontSize: 18,
-    fontWeight: "800",
-    color: "#0D1B2A",
-    marginBottom: 8,
+    fontWeight: "bold",
+    marginBottom: 12,
+    textAlign: "center",
   },
   mapText: {
     color: "#3D5068",
@@ -174,13 +168,7 @@ const styles = StyleSheet.create({
   // Landmark Card
   landmarkCard: {
     flexDirection: "row",
-    gap: 10,
-    alignItems: "flex-start",
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#D6E4F0",
+    justifyContent: "space-between",
   },
   landmarkContent: {
     flex: 1,
