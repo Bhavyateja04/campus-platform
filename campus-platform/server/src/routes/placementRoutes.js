@@ -1,5 +1,8 @@
 const express = require("express");
-const router = express.Router();
+const router  = express.Router();
+
+const protect   = require("../middleware/authMiddleware");
+const adminOnly = require("../middleware/adminMiddleware");
 
 const {
   createPlacementItem,
@@ -7,19 +10,17 @@ const {
   viewItems,
   deleteItem,
 } = require("../controllers/PlacementController");
-const protect = require("../middleware/authMiddleware");
-const adminOnly = require("../middleware/adminMiddleware");
 
-// @route   POST    /api/placements
-router.post("/", protect, createPlacementItem);
+// ─── Routes ───────────────────────────────────────────────────────────────────
 
-// @route   GET     /api/placements
-router.get("/", protect, viewItems);
+// User routes
+router.post ("/",    protect,             createPlacementItem);
+router.get  ("/",    protect,             viewItems);
+router.patch("/:id", protect,             updateItem);
 
-// @route   PATCH   /api/placements/:id
-router.patch("/:id", protect, updateItem);
-
-// @route   DELETE  /api/placements/:id  (admin only)
+// Admin routes
 router.delete("/:id", protect, adminOnly, deleteItem);
+
+// ─── Export ───────────────────────────────────────────────────────────────────
 
 module.exports = router;
