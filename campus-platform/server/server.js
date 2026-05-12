@@ -1,114 +1,81 @@
+const http    = require("http");
 const express = require("express");
-const cors = require("cors");
-const dotenv = require("dotenv");
-const http = require("http");
-const connectDB = require("./src/config/db");
-<<<<<<< HEAD:campus-platform/server/server.js
-const { initRealtime } = require("./src/realtime");
-=======
+const cors    = require("cors");
+const dotenv  = require("dotenv");
 
-// Load environment variables first before anything else
->>>>>>> 42497444c3dfa972ccb0e3bbcafe0428cec6335a:server/server.js
+// Load environment variables before any other imports that may read them
 dotenv.config();
 
-const app = express();
+const connectDB         = require("./src/config/db");
+const { initRealtime }  = require("./src/realtime");
+
+// ─── Route Imports ────────────────────────────────────────────────────────────
+
+const authRoutes         = require("./src/routes/authRoutes");
+const userRoutes         = require("./src/routes/UserRoutes");
+const adminRoutes        = require("./src/routes/adminRoutes");
+const lostRoutes         = require("./src/routes/LostFoundRoutes");
+const goodsRoutes        = require("./src/routes/GoodsRoutes");
+const memoriesRoutes     = require("./src/routes/collegeMemoriesRoutes");
+const clubsRoutes        = require("./src/routes/clubsRoutes");
+const placementRoutes    = require("./src/routes/placementRoutes");
+const canteensRoutes     = require("./src/routes/canteensRoute");
+const notificationRoutes = require("./src/routes/notificationsRoutes");
+const moderationRoutes   = require("./src/routes/moderationRoutes");
+
+// ─── App Setup ────────────────────────────────────────────────────────────────
+
+const app    = express();
 const server = http.createServer(app);
 
-// Database connection
 connectDB();
+initRealtime(server);
 
-<<<<<<< HEAD:campus-platform/server/server.js
+// ─── Global Middleware ────────────────────────────────────────────────────────
+
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
-const authRoutes = require("./src/routes/authRoutes");
-
-app.use("/api/auth", authRoutes);
-
-// routes
-const userRoutes = require("./src/routes/UserRoutes");
-
-app.use("/api/users", userRoutes);
-
-//adminRoutes
-const adminRoutes = require("./src/routes/adminRoutes");
-
-app.use("/api/admin", adminRoutes);
-//lost items routes
-const lostRoutes = require("./src/routes/LostFoundRoutes");
-
-app.use("/api/lostitems", lostRoutes);
-//goods routes
-const goodsRoutes = require("./src/routes/GoodsRoutes");
-
-app.use("/api/goods", goodsRoutes);
-
-//collegeMemoriesRoutes
-=======
-// Body parser middleware
-app.use(express.json());
-
-// Routes
-const authRoutes            = require("./src/routes/authRoutes");
-const userRoutes            = require("./src/routes/UserRoutes");
-const adminRoutes           = require("./src/routes/adminRoutes");
-const lostRoutes            = require("./src/routes/LostFoundRoutes");
-const goodsRoutes           = require("./src/routes/GoodsRoutes");
->>>>>>> 42497444c3dfa972ccb0e3bbcafe0428cec6335a:server/server.js
-const collegeMemoriesRoutes = require("./src/routes/collegeMemoriesRoutes");
-const clubsRoutes           = require("./src/routes/clubsRoutes");
-const placementRoutes       = require("./src/routes/placementRoutes");
+// ─── Routes ───────────────────────────────────────────────────────────────────
 
 app.use("/api/auth",             authRoutes);
 app.use("/api/users",            userRoutes);
 app.use("/api/admin",            adminRoutes);
 app.use("/api/lostitems",        lostRoutes);
 app.use("/api/goods",            goodsRoutes);
-app.use("/api/college-memories", collegeMemoriesRoutes);
+app.use("/api/college-memories", memoriesRoutes);
 app.use("/api/clubs",            clubsRoutes);
 app.use("/api/placements",       placementRoutes);
+app.use("/api/canteens",         canteensRoutes);
+app.use("/api/notifications",    notificationRoutes);
+app.use("/api/moderate",         moderationRoutes);
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err.message);
-  res.status(500).json({ success: false, message: "Internal server error" });
-});
-
-<<<<<<< HEAD:campus-platform/server/server.js
-//placement routes
-const placementRoutes = require("./src/routes/placementRoutes");
-app.use("/api/placements", placementRoutes);
-
-//canteens routes
-const canteensRoutes = require("./src/routes/canteensRoute");
-app.use("/api/canteens", canteensRoutes);
-
-// notifications routes
-const notificationsRoutes = require("./src/routes/notificationsRoutes");
-app.use("/api/notifications", notificationsRoutes);
-
-// content moderation proxy (delegates to ai-service when reachable)
-const moderationRoutes = require("./src/routes/moderationRoutes");
-app.use("/api/moderate", moderationRoutes);
+// ─── Health Check ─────────────────────────────────────────────────────────────
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "campus-platform-server" });
 });
 
-// 404 catch-all so the client always gets a JSON shape it can parse.
+// ─── 404 Handler ──────────────────────────────────────────────────────────────
+
 app.use((req, res) => {
-  res
-    .status(404)
-    .json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
+  res.status(404).json({
+    success: false,
+    message: `Route not found: ${req.method} ${req.originalUrl}`,
+  });
 });
 
+// ─── Global Error Handler ─────────────────────────────────────────────────────
+
+app.use((err, _req, res, _next) => {
+  console.error("Unhandled error:", err.message);
+  res.status(500).json({ success: false, message: "Internal server error" });
+});
+
+// ─── Start Server ─────────────────────────────────────────────────────────────
+
 const PORT = process.env.PORT || 5000;
-initRealtime(server);
 
 server.listen(PORT, () => {
-=======
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
->>>>>>> 42497444c3dfa972ccb0e3bbcafe0428cec6335a:server/server.js
   console.log(`Server running on port ${PORT}`);
 });
