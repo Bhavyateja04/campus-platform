@@ -1,14 +1,21 @@
 const express = require("express");
-const router = express.Router();
-const multer = require("multer");
+const multer  = require("multer");
+const router  = express.Router();
+
 const {
   moderateText,
   moderateMemory,
 } = require("../controllers/moderationController");
 
-const upload = multer({ storage: multer.memoryStorage() });
+// ─── Upload Middleware ────────────────────────────────────────────────────────
 
-router.post("/text", moderateText);
-router.post("/memory", upload.single("image"), moderateMemory);
+const uploadSingleImage = multer({ storage: multer.memoryStorage() }).single("image");
+
+// ─── Routes ───────────────────────────────────────────────────────────────────
+
+router.post("/text",   moderateText);
+router.post("/memory", uploadSingleImage, moderateMemory);
+
+// ─── Export ───────────────────────────────────────────────────────────────────
 
 module.exports = router;
