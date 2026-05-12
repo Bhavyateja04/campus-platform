@@ -1,4 +1,9 @@
-* {
+/* =============================================================
+   RESET & BASE
+   ============================================================= */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -11,27 +16,35 @@ button,
 input,
 select {
   font: inherit;
-}
-
-button {
   cursor: pointer;
 }
 
+/* =============================================================
+   DESIGN TOKENS
+   ============================================================= */
 .admin-shell {
-  --bg: #f5f7fb;
-  --surface: rgba(255, 255, 255, 0.82);
-  --surface-strong: #ffffff;
-  --text: #172033;
-  --muted: #667085;
-  --border: rgba(120, 132, 158, 0.2);
-  --hover: rgba(108, 92, 231, 0.08);
-  --chart-grid: rgba(102, 112, 133, 0.18);
-  --shadow: 0 18px 45px rgba(27, 39, 70, 0.09);
+  /* Colors */
   --violet: #6c5ce7;
-  --green: #00b894;
-  --amber: #f5a623;
-  --blue: #0984e3;
-  --red: #ff5c7a;
+  --green:  #00b894;
+  --amber:  #f5a623;
+  --blue:   #0984e3;
+  --red:    #ff5c7a;
+
+  /* Surface */
+  --bg:             #f5f7fb;
+  --surface:        rgba(255, 255, 255, 0.82);
+  --surface-strong: #ffffff;
+
+  /* Text */
+  --text:  #172033;
+  --muted: #667085;
+
+  /* Misc */
+  --border:     rgba(120, 132, 158, 0.2);
+  --hover:      rgba(108, 92, 231, 0.08);
+  --chart-grid: rgba(102, 112, 133, 0.18);
+  --shadow:     0 18px 45px rgba(27, 39, 70, 0.09);
+
   min-height: 100vh;
   color: var(--text);
   background:
@@ -40,18 +53,22 @@ button {
     var(--bg);
 }
 
+/* Dark mode overrides */
 .admin-shell.dark {
-  --bg: #0d111c;
-  --surface: rgba(21, 27, 43, 0.78);
+  --bg:             #0d111c;
+  --surface:        rgba(21, 27, 43, 0.78);
   --surface-strong: #151b2b;
-  --text: #f7f8fc;
-  --muted: #aab2c5;
-  --border: rgba(230, 235, 255, 0.12);
-  --hover: rgba(255, 255, 255, 0.07);
-  --chart-grid: rgba(230, 235, 255, 0.12);
-  --shadow: 0 22px 60px rgba(0, 0, 0, 0.28);
+  --text:           #f7f8fc;
+  --muted:          #aab2c5;
+  --border:         rgba(230, 235, 255, 0.12);
+  --hover:          rgba(255, 255, 255, 0.07);
+  --chart-grid:     rgba(230, 235, 255, 0.12);
+  --shadow:         0 22px 60px rgba(0, 0, 0, 0.28);
 }
 
+/* =============================================================
+   SIDEBAR
+   ============================================================= */
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
@@ -67,6 +84,7 @@ button {
   gap: 28px;
 }
 
+/* Brand */
 .brand {
   display: flex;
   align-items: center;
@@ -97,6 +115,7 @@ button {
   font-size: 12px;
 }
 
+/* Nav */
 .sidebar nav {
   display: grid;
   gap: 7px;
@@ -147,6 +166,7 @@ button {
   font-style: normal;
 }
 
+/* Sidebar card */
 .sidebar-card {
   margin-top: auto;
   padding: 16px;
@@ -162,6 +182,9 @@ button {
   margin-bottom: 8px;
 }
 
+/* =============================================================
+   WORKSPACE & TOPBAR
+   ============================================================= */
 .workspace {
   margin-left: 282px;
   min-height: 100vh;
@@ -186,6 +209,22 @@ button {
   gap: 16px;
 }
 
+.topbar h1 {
+  margin: 0;
+  font-size: clamp(26px, 3vw, 42px);
+  letter-spacing: 0;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* =============================================================
+   SHARED TEXT HELPERS
+   ============================================================= */
 .topbar p,
 .page-header p,
 .panel p,
@@ -208,26 +247,9 @@ button {
   letter-spacing: 0;
 }
 
-.topbar h1 {
-  font-size: clamp(26px, 3vw, 42px);
-}
-
-.topbar-actions,
-.filters,
-.button-row,
-.metric-row,
-.contact-row,
-.memory-actions,
-.split {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.topbar-actions {
-  justify-content: flex-end;
-}
-
+/* =============================================================
+   SEARCH & FILTERS
+   ============================================================= */
 .global-search,
 .search-box {
   min-width: min(360px, 38vw);
@@ -250,6 +272,25 @@ button {
   outline: 0;
 }
 
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.filters select {
+  width: 190px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-strong);
+}
+
+/* =============================================================
+   BUTTONS
+   ============================================================= */
 .icon-button {
   width: 44px;
   height: 44px;
@@ -262,12 +303,57 @@ button {
   transition: transform 0.22s, box-shadow 0.22s;
 }
 
+.soft-button,
+.primary-button,
+.danger-button {
+  border: 0;
+  border-radius: 14px;
+  padding: 10px 13px;
+  transition: transform 0.22s, box-shadow 0.22s;
+  white-space: nowrap;
+}
+
+.primary-button,
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.soft-button  { color: var(--text); background: var(--hover); }
+.primary-button { color: white; background: linear-gradient(135deg, var(--violet), #00d2d3); }
+.danger-button  { color: white; background: linear-gradient(135deg, #ff5c7a, #ff8f70); }
+
 .icon-button:hover,
 .soft-button:hover,
 .primary-button:hover,
 .danger-button:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow);
+}
+
+.ghost-danger {
+  background: rgba(255, 92, 122, 0.14);
+  color: #be123c;
+  border: 1px solid rgba(255, 92, 122, 0.25);
+}
+
+.fab-button {
+  position: fixed;
+  right: 30px;
+  bottom: 92px;
+  z-index: 45;
+  width: 62px;
+  height: 62px;
+  border: 0;
+  border-radius: 22px;
+  color: white;
+  background: linear-gradient(135deg, var(--violet), var(--blue));
+  box-shadow: 0 20px 45px rgba(108, 92, 231, 0.38);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
 }
 
 .badge-dot {
@@ -286,6 +372,9 @@ button {
   border: 2px solid var(--surface-strong);
 }
 
+/* =============================================================
+   PAGE LAYOUT HELPERS
+   ============================================================= */
 .page-motion {
   display: grid;
   gap: 22px;
@@ -298,6 +387,11 @@ button {
   gap: 18px;
 }
 
+.page-header h2 {
+  margin-top: 6px;
+  font-size: clamp(26px, 4vw, 46px);
+}
+
 .eyebrow {
   color: var(--violet);
   font-weight: 800;
@@ -306,22 +400,21 @@ button {
   letter-spacing: 0.08em;
 }
 
-.page-header h2 {
-  margin-top: 6px;
-  font-size: clamp(26px, 4vw, 46px);
+.split {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.stats-grid,
-.card-grid,
-.product-grid,
-.placement-grid,
-.memory-grid,
-.club-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+.button-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
+/* =============================================================
+   CARDS & PANELS (shared)
+   ============================================================= */
 .stat-card,
 .panel,
 .item-card,
@@ -337,6 +430,43 @@ button {
   backdrop-filter: blur(18px);
 }
 
+/* Image cards */
+.item-card,
+.product-card,
+.placement-card,
+.memory-card,
+.club-card {
+  overflow: hidden;
+}
+
+.item-card img,
+.product-card img,
+.memory-card > img,
+.club-card img {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+}
+
+.item-card > div,
+.product-card > div,
+.placement-card,
+.memory-card > div,
+.club-card > div {
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+/* =============================================================
+   STAT CARDS
+   ============================================================= */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
 .stat-card {
   padding: 20px;
   display: grid;
@@ -344,9 +474,7 @@ button {
   overflow: hidden;
 }
 
-.stat-card strong {
-  font-size: 32px;
-}
+.stat-card strong { font-size: 32px; }
 
 .stat-card small {
   display: flex;
@@ -365,18 +493,13 @@ button {
   background: var(--violet);
 }
 
-.stat-card.green .stat-icon {
-  background: var(--green);
-}
+.stat-card.green .stat-icon { background: var(--green); }
+.stat-card.amber .stat-icon { background: var(--amber); }
+.stat-card.blue  .stat-icon { background: var(--blue);  }
 
-.stat-card.amber .stat-icon {
-  background: var(--amber);
-}
-
-.stat-card.blue .stat-icon {
-  background: var(--blue);
-}
-
+/* =============================================================
+   DASHBOARD GRID
+   ============================================================= */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1.4fr 0.8fr;
@@ -387,6 +510,9 @@ button {
   grid-column: span 1;
 }
 
+/* =============================================================
+   PANEL
+   ============================================================= */
 .panel {
   padding: 20px;
 }
@@ -402,10 +528,7 @@ button {
   margin-bottom: 14px;
 }
 
-.panel-title span,
-.status,
-.pill,
-.priority {
+.panel-title span {
   border-radius: 999px;
   padding: 5px 10px;
   font-size: 12px;
@@ -414,6 +537,7 @@ button {
   color: var(--violet);
 }
 
+/* Timeline */
 .timeline-panel {
   display: grid;
   align-content: start;
@@ -442,19 +566,22 @@ button {
   font-size: 13px;
 }
 
-.filters {
-  justify-content: space-between;
-  flex-wrap: wrap;
+/* =============================================================
+   GRIDS (cards, products, placements, memory, clubs)
+   ============================================================= */
+.card-grid,
+.product-grid,
+.placement-grid,
+.memory-grid,
+.club-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
 }
 
-.filters select {
-  width: 190px;
-  padding: 13px 14px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--surface-strong);
-}
-
+/* =============================================================
+   TABLE
+   ============================================================= */
 .table-panel {
   overflow: auto;
 }
@@ -494,6 +621,7 @@ button {
   object-fit: cover;
 }
 
+/* Progress bar */
 .progress {
   position: relative;
   height: 11px;
@@ -518,45 +646,41 @@ button {
   color: var(--muted);
 }
 
-.soft-button,
-.primary-button,
-.danger-button {
-  border: 0;
-  border-radius: 14px;
-  padding: 10px 13px;
-  transition: transform 0.22s, box-shadow 0.22s;
+/* =============================================================
+   STATUS / PILL / PRIORITY BADGES
+   ============================================================= */
+.status,
+.pill,
+.priority {
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--hover);
+  color: var(--violet);
+}
+
+.status {
+  padding: 6px 12px;
+  font-weight: 700;
   white-space: nowrap;
 }
 
-.soft-button {
-  color: var(--text);
-  background: var(--hover);
-}
+.status.success { color: #047857; background: rgba(0, 184, 148, 0.16); }
+.status.info    { color: #0369a1; background: rgba(9, 132, 227, 0.16);  }
+.status.warning { color: #a16207; background: rgba(245, 166, 35, 0.16); }
+.status.danger  { color: #be123c; background: rgba(255, 92, 122, 0.13); }
 
-.primary-button {
-  color: white;
-  background: linear-gradient(135deg, var(--violet), #00d2d3);
-}
+.pill.lost  { color: #c2410c; background: rgba(245, 166, 35, 0.16); }
+.pill.found { color: #047857; background: rgba(0, 184, 148, 0.16);  }
 
-.danger-button {
-  color: white;
-  background: linear-gradient(135deg, #ff5c7a, #ff8f70);
-}
+.priority.high   { color: #be123c; background: rgba(255, 92, 122, 0.13); }
+.priority.medium { color: #a16207; background: rgba(245, 166, 35, 0.16); }
+.priority.low    { color: #047857; background: rgba(0, 184, 148, 0.16);  }
 
-.primary-button,
-.danger-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.ghost-danger {
-  background: rgba(255, 92, 122, 0.14);
-  color: #be123c;
-  border: 1px solid rgba(255, 92, 122, 0.25);
-}
-
+/* =============================================================
+   TOAST
+   ============================================================= */
 .toast {
   position: fixed;
   right: 28px;
@@ -574,63 +698,22 @@ button {
   backdrop-filter: blur(18px);
 }
 
-.item-card,
-.product-card,
-.placement-card,
-.memory-card,
-.club-card {
-  overflow: hidden;
-}
-
-.item-card img,
-.product-card img,
-.memory-card>img,
-.club-card img {
-  width: 100%;
-  height: 190px;
-  object-fit: cover;
-}
-
-.item-card>div,
-.product-card>div,
-.placement-card,
-.memory-card>div,
-.club-card>div {
-  padding: 18px;
-  display: grid;
-  gap: 12px;
-}
-
-.card-grid,
-.product-grid,
-.placement-grid,
-.memory-grid,
-.club-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.pill.lost {
-  color: #c2410c;
-  background: rgba(245, 166, 35, 0.16);
-}
-
-.pill.found {
-  color: #047857;
-  background: rgba(0, 184, 148, 0.16);
-}
-
-.status.danger {
-  color: #be123c;
-  background: rgba(255, 92, 122, 0.13);
-}
-
+/* =============================================================
+   MODERATION
+   ============================================================= */
 .moderation-panel {
   border-style: dashed;
 }
 
+/* =============================================================
+   CONTACT / METRIC / MEMORY ROW LINKS
+   ============================================================= */
 .contact-row,
 .metric-row,
 .memory-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
@@ -647,6 +730,17 @@ button {
   gap: 7px;
 }
 
+.metric-row span {
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
+/* =============================================================
+   CANTEEN / MENU
+   ============================================================= */
 .canteen-layout {
   display: grid;
   grid-template-columns: 320px 1fr;
@@ -709,6 +803,7 @@ button {
   display: block;
 }
 
+/* Dark food panel */
 .dark-food-panel {
   color: #f8fafc;
   background:
@@ -753,6 +848,7 @@ button {
   width: 100%;
 }
 
+/* Upload / drop zone */
 .upload-trigger {
   cursor: pointer;
 }
@@ -778,6 +874,7 @@ button {
   color: #67e8f9;
 }
 
+/* Menu gallery & food cards */
 .menu-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(560px, 100%), 1fr));
@@ -845,15 +942,13 @@ button {
   transition: transform 0.35s;
 }
 
-.food-card>div {
+.food-card > div {
   padding: 16px;
   display: grid;
   gap: 8px;
 }
 
-.food-card h3 {
-  margin: 0;
-}
+.food-card h3 { margin: 0; }
 
 .food-card strong {
   color: #67e8f9;
@@ -871,13 +966,8 @@ button {
   font-weight: 900;
 }
 
-.available {
-  color: #86efac;
-}
-
-.unavailable {
-  color: #fda4af;
-}
+.available   { color: #86efac; }
+.unavailable { color: #fda4af; }
 
 .lightbox-image {
   width: 100%;
@@ -887,6 +977,9 @@ button {
   display: block;
 }
 
+/* =============================================================
+   NOTIFICATIONS
+   ============================================================= */
 .notification-stack {
   display: grid;
   gap: 12px;
@@ -898,15 +991,11 @@ button {
   gap: 16px;
 }
 
-.notification-card {
-  overflow: hidden;
-}
-
 .notification-card.unread {
   border-color: rgba(108, 92, 231, 0.38);
 }
 
-.notification-card>button {
+.notification-card > button {
   width: 100%;
   border: 0;
   padding: 16px;
@@ -940,23 +1029,6 @@ button {
   box-shadow: 0 0 0 5px rgba(108, 92, 231, 0.12);
 }
 
-.fab-button {
-  position: fixed;
-  right: 30px;
-  bottom: 92px;
-  z-index: 45;
-  width: 62px;
-  height: 62px;
-  border: 0;
-  border-radius: 22px;
-  color: white;
-  background: linear-gradient(135deg, var(--violet), var(--blue));
-  box-shadow: 0 20px 45px rgba(108, 92, 231, 0.38);
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-}
-
 .notification-form {
   display: grid;
   gap: 14px;
@@ -986,21 +1058,9 @@ button {
   resize: vertical;
 }
 
-.priority.high {
-  color: #be123c;
-  background: rgba(255, 92, 122, 0.13);
-}
-
-.priority.medium {
-  color: #a16207;
-  background: rgba(245, 166, 35, 0.16);
-}
-
-.priority.low {
-  color: #047857;
-  background: rgba(0, 184, 148, 0.16);
-}
-
+/* =============================================================
+   COMPANY / PLACEMENT
+   ============================================================= */
 .company-logo {
   width: 58px;
   height: 58px;
@@ -1012,14 +1072,9 @@ button {
   background: linear-gradient(135deg, var(--blue), var(--violet));
 }
 
-.metric-row span {
-  color: var(--muted);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 7px 10px;
-  font-size: 13px;
-}
-
+/* =============================================================
+   TABS
+   ============================================================= */
 .tabs {
   display: flex;
   gap: 10px;
@@ -1078,6 +1133,9 @@ button {
   background: rgba(255, 255, 255, 0.18);
 }
 
+/* =============================================================
+   AI PANEL
+   ============================================================= */
 .ai-panel {
   display: grid;
   gap: 8px;
@@ -1099,6 +1157,9 @@ button {
   color: var(--muted);
 }
 
+/* =============================================================
+   SETTINGS
+   ============================================================= */
 .settings-panel,
 .settings-block {
   display: grid;
@@ -1118,6 +1179,9 @@ button {
   background: var(--surface-strong);
 }
 
+/* =============================================================
+   MODALS
+   ============================================================= */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1186,14 +1250,16 @@ button {
   align-items: center;
 }
 
-.side-detail>img {
+.side-detail > img {
   width: 100%;
   height: 360px;
   object-fit: cover;
   border-radius: 24px;
 }
 
-/* Exam Hall Locator Styles */
+/* =============================================================
+   EXAM HALL LOCATOR
+   ============================================================= */
 .exam-halls-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1231,14 +1297,8 @@ button {
   font-size: 13px;
 }
 
-.hall-details span {
-  color: var(--muted);
-}
-
-.hall-details strong {
-  color: var(--text);
-  font-weight: 600;
-}
+.hall-details span  { color: var(--muted); }
+.hall-details strong { color: var(--text); font-weight: 600; }
 
 .hall-facilities {
   display: flex;
@@ -1265,6 +1325,7 @@ button {
   grid-template-columns: 1.5fr 0.8fr 1.3fr 1.2fr 0.8fr 0.9fr 60px;
 }
 
+/* Exam form */
 .exam-form {
   display: grid;
   gap: 16px;
@@ -1299,14 +1360,13 @@ button {
   background: var(--surface-strong);
 }
 
+/* Hall modal */
 .hall-modal {
   display: grid;
   gap: 18px;
 }
 
-.hall-modal h2 {
-  margin: 0;
-}
+.hall-modal h2 { margin: 0; }
 
 .hall-modal h4 {
   margin: 0 0 12px 0;
@@ -1342,14 +1402,12 @@ button {
   background: var(--hover);
 }
 
-.exam-item>div {
+.exam-item > div {
   display: grid;
   gap: 4px;
 }
 
-.exam-item strong {
-  font-size: 14px;
-}
+.exam-item strong { font-size: 14px; }
 
 .exam-item p {
   margin: 0;
@@ -1362,29 +1420,9 @@ button {
   color: var(--muted);
 }
 
-.status {
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.status.success {
-  color: #047857;
-  background: rgba(0, 184, 148, 0.16);
-}
-
-.status.info {
-  color: #0369a1;
-  background: rgba(9, 132, 227, 0.16);
-}
-
-.status.warning {
-  color: #a16207;
-  background: rgba(245, 166, 35, 0.16);
-}
-
+/* =============================================================
+   MOBILE UTILITIES
+   ============================================================= */
 .mobile-only {
   display: none;
 }
@@ -1393,6 +1431,11 @@ button {
   display: none;
 }
 
+/* =============================================================
+   RESPONSIVE BREAKPOINTS
+   ============================================================= */
+
+/* Tablet */
 @media (max-width: 1200px) {
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1418,6 +1461,7 @@ button {
   }
 }
 
+/* Mobile */
 @media (max-width: 860px) {
   .sidebar {
     transform: translateX(-105%);
@@ -1483,13 +1527,13 @@ button {
   }
 
   .menu-hero,
-  .side-detail>img {
+  .side-detail > img {
     height: 280px;
   }
 }
 
+/* Small mobile */
 @media (max-width: 560px) {
-
   .filters,
   .button-row {
     align-items: stretch;
@@ -1504,7 +1548,7 @@ button {
     font-size: 26px;
   }
 
-  .notification-card>button {
+  .notification-card > button {
     grid-template-columns: 1fr;
   }
 
