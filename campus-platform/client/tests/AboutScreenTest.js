@@ -1,10 +1,29 @@
-// ─────────────────────────────────────────
-//  test-api.js  →  AboutScreen
-// ─────────────────────────────────────────
+// ============================================================================
+// Test API
+// ============================================================================
+// Mock API for AboutScreen development and testing
+// Replace with real API calls when backend is ready
+// ============================================================================
 
-const delay = (ms = 400) => new Promise(res => setTimeout(res, ms));
+// ============================================================================
+// Utilities
+// ============================================================================
 
-// ── University Overview ──────────────────
+/**
+ * Simulates network delay for realistic async behavior
+ * @param {number} ms - Delay in milliseconds (default: 400)
+ * @returns {Promise<void>}
+ */
+const delay = (ms = 400) => new Promise((res) => setTimeout(res, ms));
+
+// ============================================================================
+// University Overview
+// ============================================================================
+
+/**
+ * Fetches university basic information
+ * @returns {Promise<Object>} University info object
+ */
 export const getUniversityInfo = async () => {
   await delay();
   return {
@@ -12,7 +31,7 @@ export const getUniversityInfo = async () => {
     location: 'Surampalem, Andhra Pradesh',
     naacRating: 'A+',
     established: 2001,
-    logoUrl: require('../../assets/aditya.jpg'), // local asset
+    logoUrl: require('../../assets/aditya.jpg'),
     website: 'https://www.adityauniversity.in',
     email: 'info@adityauniversity.in',
     instagram: '@adityauniversity',
@@ -20,18 +39,48 @@ export const getUniversityInfo = async () => {
   };
 };
 
-// ── Stats (NAAC badge row + stats grid) ─
+// ============================================================================
+// University Statistics
+// ============================================================================
+
+/**
+ * Fetches university statistics (NAAC rating, student count, etc.)
+ * @returns {Promise<Array>} Array of stat objects with value, label, and icon
+ */
 export const getUniversityStats = async () => {
   await delay(300);
   return [
-    { val: 'A+',   label: 'NAAC Rating', icon: 'ribbon-outline'  },
-    { val: '12K+', label: 'Students',    icon: 'people-outline'  },
-    { val: '200+', label: 'Faculty',     icon: 'person-outline'  },
-    { val: '50+',  label: 'Departments', icon: 'school-outline'  },
+    {
+      val: 'A+',
+      label: 'NAAC Rating',
+      icon: 'ribbon-outline',
+    },
+    {
+      val: '12K+',
+      label: 'Students',
+      icon: 'people-outline',
+    },
+    {
+      val: '200+',
+      label: 'Faculty',
+      icon: 'person-outline',
+    },
+    {
+      val: '50+',
+      label: 'Departments',
+      icon: 'school-outline',
+    },
   ];
 };
 
-// ── Campus Gallery (slideshow) ───────────
+// ============================================================================
+// Campus Gallery
+// ============================================================================
+
+/**
+ * Fetches campus images for slideshow/gallery
+ * @returns {Promise<Array>} Array of image objects with id, uri, and caption
+ */
 export const getCampusImages = async () => {
   await delay(350);
   return [
@@ -53,7 +102,14 @@ export const getCampusImages = async () => {
   ];
 };
 
-// ── About Split Cards ────────────────────
+// ============================================================================
+// About Sections (Split Cards)
+// ============================================================================
+
+/**
+ * Fetches about page sections with image and text
+ * @returns {Promise<Array>} Array of section objects with heading, body, and image
+ */
 export const getAboutSections = async () => {
   await delay(300);
   return [
@@ -61,20 +117,29 @@ export const getAboutSections = async () => {
       id: 'about',
       heading: 'Aditya University',
       body: 'One of the leading institutions in Andhra Pradesh, known for academic excellence, innovation, and modern campus facilities.',
-      imageUri: 'https://ik.imagekit.io/lhb4hvprkpz/1_ycquTeVGC.jpg?updatedAt=1627469248691',
+      imageUri:
+        'https://ik.imagekit.io/lhb4hvprkpz/1_ycquTeVGC.jpg?updatedAt=1627469248691',
       imageLeft: true,
     },
     {
       id: 'holistic',
       heading: 'Holistic Development',
       body: 'Students are encouraged to participate in technical events, cultural activities, placements, research programs, and student clubs.',
-      imageUri: 'https://ik.imagekit.io/lhb4hvprkpz/2_Gq3MZHfTS.jpg?updatedAt=1627469249245',
+      imageUri:
+        'https://ik.imagekit.io/lhb4hvprkpz/2_Gq3MZHfTS.jpg?updatedAt=1627469249245',
       imageLeft: false,
     },
   ];
 };
 
-// ── University Facilities ────────────────
+// ============================================================================
+// University Features/Facilities
+// ============================================================================
+
+/**
+ * Fetches university features and facilities
+ * @returns {Promise<Array>} Array of feature objects with icon, label, description, and color
+ */
 export const getUniversityFeatures = async () => {
   await delay(300);
   return [
@@ -137,7 +202,14 @@ export const getUniversityFeatures = async () => {
   ];
 };
 
-// ── Contact Info ─────────────────────────
+// ============================================================================
+// Contact Information
+// ============================================================================
+
+/**
+ * Fetches contact information (website, email, social media)
+ * @returns {Promise<Array>} Array of contact objects with icon, label, value, color, and URL
+ */
 export const getContactInfo = async () => {
   await delay(250);
   return [
