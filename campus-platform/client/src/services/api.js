@@ -116,6 +116,8 @@ export const api = {
     request(path, { ...opts, method: "POST", body }),
   put: (path, body, opts = {}) =>
     request(path, { ...opts, method: "PUT", body }),
+  patch: (path, body, opts = {}) =>
+    request(path, { ...opts, method: "PATCH", body }),
   delete: (path, opts = {}) => request(path, { ...opts, method: "DELETE" }),
 };
 
@@ -146,18 +148,21 @@ export const usersApi = {
 };
 
 export const lostFoundApi = {
-  list: () => api.get("/api/lostitems/viewitems", { auth: true }),
-  create: (item) => api.post("/api/lostitems/createitem", item, { auth: true }),
-  update: (id, p) =>
-    api.put(`/api/lostitems/updateitem/${id}`, p, { auth: true }),
-  remove: (id) => api.delete(`/api/lostitems/deleteitem/${id}`, { auth: true }),
+  list: () => api.get("/api/lostitems", { auth: true }),
+  create: (item) => api.post("/api/lostitems", item, { auth: true }),
+  update: (id, p) => api.put(`/api/lostitems/${id}`, p, { auth: true }),
+  remove: (id) => api.delete(`/api/lostitems/${id}`, { auth: true }),
+  markFound: (id) =>
+    api.patch(`/api/lostitems/${id}/found`, {}, { auth: true }),
+  markResolved: (id) =>
+    api.patch(`/api/lostitems/${id}/resolved`, {}, { auth: true }),
 };
 
 export const goodsApi = {
-  list: () => api.get("/api/goods/viewitems", { auth: true }),
-  create: (item) => api.post("/api/goods/createitem", item, { auth: true }),
-  update: (id, p) => api.put(`/api/goods/updateitem/${id}`, p, { auth: true }),
-  remove: (id) => api.delete(`/api/goods/deleteitem/${id}`, { auth: true }),
+  list: () => api.get("/api/goods", { auth: true }),
+  create: (item) => api.post("/api/goods", item, { auth: true }),
+  update: (id, p) => api.put(`/api/goods/${id}`, p, { auth: true }),
+  remove: (id) => api.delete(`/api/goods/${id}`, { auth: true }),
   markAsSold: (id) =>
     api.put(`/api/goods/markassold/${id}`, {}, { auth: true }),
 };
@@ -181,13 +186,10 @@ export const clubsApi = {
 };
 
 export const placementsApi = {
-  list: () => api.get("/api/placements/viewitems", { auth: true }),
-  create: (item) =>
-    api.post("/api/placements/createitem", item, { auth: true }),
-  update: (id, p) =>
-    api.put(`/api/placements/updateitem/${id}`, p, { auth: true }),
-  remove: (id) =>
-    api.delete(`/api/placements/deleteitem/${id}`, { auth: true }),
+  list: () => api.get("/api/placements", { auth: true }),
+  create: (item) => api.post("/api/placements", item, { auth: true }),
+  update: (id, p) => api.put(`/api/placements/${id}`, p, { auth: true }),
+  remove: (id) => api.delete(`/api/placements/${id}`, { auth: true }),
 };
 
 export const canteensApi = {
