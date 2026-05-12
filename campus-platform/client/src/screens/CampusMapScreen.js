@@ -1,22 +1,28 @@
-import React, { Component, useState, useEffect, useRef, useMemo } from "react";
-import { StyleSheet, Text, Button, View } from "react-native";
-import MapView, { Marker, Polyline } from "react-native-maps";
-import MapViewDirections from "react-native-maps-directions";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  SafeAreaView,
+  StatusBar,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Dimensions,
+  Platform,
+} from "react-native";
+import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
-import { GOOGLE_MAPS_APIKEY } from "../utils/constants";
 import { useRoute } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { AllPlaces } from "../data/places";
 
 // ─────────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────────
-
-const LANDMARKS = [
-  { name: "Admin Block",     note: "Admissions, records, support" },
-  { name: "Library",         note: "Study halls, journals, computers" },
-  { name: "Satya Canteen",   note: "Main food court near the courtyard" },
-  { name: "Innovation Lab",  note: "Project demos and maker space" },
-  { name: "Sports Ground",   note: "Outdoor practice and events" },
-];
+const { width } = Dimensions.get("window");
+const MAP_HEIGHT = Math.round((width * 9) / 16);
 
 // ─────────────────────────────────────────────
 // SUB-COMPONENTS
@@ -29,20 +35,18 @@ const Header = ({ onBack }) => (
     </TouchableOpacity>
     <View>
       <Text style={styles.title}>Campus Map</Text>
-      <Text style={styles.subtitle}>Quick navigation to key places on campus</Text>
+      <Text style={styles.subtitle}>
+        Quick navigation to key places on campus
+      </Text>
     </View>
   </LinearGradient>
 );
 
 const MapInfoCard = () => (
   <View style={styles.mapCard}>
-    <View style={styles.mapBadge}>
-      <Ionicons name="location" size={18} color="#fff" />
-    </View>
     <Text style={styles.mapHeadline}>Explore Aditya University</Text>
     <Text style={styles.mapText}>
-      This is a lightweight in-app campus guide. It works even if the API is
-      offline.
+      Tap markers to view places. Use your device's location to center the map.
     </Text>
   </View>
 );
@@ -62,24 +66,139 @@ const LandmarkCard = ({ name, note }) => (
 // ─────────────────────────────────────────────
 
 export default function CampusMapScreen({ navigation }) {
+  const route = useRoute();
+  const mapRef = useRef(null);
+  const [region, setRegion] = useState(null);
+  const [selected, setSelected] = useState(null);
+
+  useEffect(() => {
+    // If a place is passed via params, center on it
+    const place = route.params?.place;
+    if (place && place.latitude && place.longitude) {
+      const r = {
+        latitude: place.latitude,
+        longitude: place.longitude,
+        latitudeDelta: 0.004,
+        longitudeDelta: 0.006,
+      };
+      setRegion(r);
+      setTimeout(() => mapRef.current?.animateToRegion(r, 500), 300);
+      setSelected(place);
+      return;
+    }
+
+    // Otherwise try to use device location, fallback to first place
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === "granted") {
+          const loc = await Location.getCurrentPositionAsync({});
+          setRegion({
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+            latitudeDelta: 0.02,
+            longitudeDelta: 0.02,
+          });
+          return;
+        }
+      } catch (e) {
+        /* ignore */
+      }
+
+      const first = AllPlaces[0];
+      setRegion({
+        latitude: first.latitude,
+        longitude: first.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      });
+    })();
+  }, [route.params]);
+
   return (
     <SafeAreaView style={styles.root} edges={["left", "right", "bottom"]}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar
+        barStyle={Platform.OS === "ios" ? "dark-content" : "light-content"}
+      />
 
       <Header onBack={() => navigation.goBack()} />
 
-      <ScrollView
-        contentContainerStyle={styles.body}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.body}>
         <MapInfoCard />
+
+        {region && (
+          <MapView
+            ref={mapRef}
+            style={{ width: "100%", height: MAP_HEIGHT, borderRadius: 12 }}
+            initialRegion={region}
+            showsUserLocation={true}
+          >
+            {AllPlaces.map((p) => (
+              <Marker
+                key={p.id}
+                coordinate={{ latitude: p.latitude, longitude: p.longitude }}
+                title={p.name}
+                description={p.name}
+                onPress={() => {
+                  setSelected(p);
+                  mapRef.current?.animateToRegion(
+                    {
+                      latitude: p.latitude,
+                      longitude: p.longitude,
+                      latitudeDelta: 0.004,
+                      longitudeDelta: 0.006,
+                    },
+                    300,
+                  );
+                }}
+              />
+            ))}
+          </MapView>
+        )}
 
         <Text style={styles.sectionTitle}>Key Landmarks</Text>
 
-        {LANDMARKS.map((item) => (
-          <LandmarkCard key={item.name} name={item.name} note={item.note} />
-        ))}
-      </ScrollView>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ gap: 10 }}
+        >
+          {AllPlaces.map((place) => (
+            <TouchableOpacity
+              key={place.id}
+              style={styles.landmarkCard}
+              onPress={() => {
+                setSelected(place);
+                const r = {
+                  latitude: place.latitude,
+                  longitude: place.longitude,
+                  latitudeDelta: 0.004,
+                  longitudeDelta: 0.006,
+                };
+                mapRef.current?.animateToRegion(r, 300);
+              }}
+            >
+              <Image
+                source={place.placeImage}
+                style={{ width: 140, height: 90, borderRadius: 10 }}
+              />
+              <View style={{ padding: 8, width: 200 }}>
+                <Text style={styles.landmarkName}>{place.name}</Text>
+                <Text numberOfLines={2} style={styles.landmarkNote}>
+                  {place.note || ""}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {selected && (
+          <View style={styles.bottomCard}>
+            <Text style={{ fontWeight: "800" }}>{selected.name}</Text>
+            <Text style={{ color: "#444", marginTop: 6 }}>{selected.note}</Text>
+          </View>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -145,11 +264,11 @@ const styles = StyleSheet.create({
     },
   },
 
-  destinationText: {
+  mapHeadline: {
     fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 12,
-    textAlign: "center",
+    marginBottom: 8,
+    color: "#0D1B2A",
   },
   mapText: {
     color: "#3D5068",

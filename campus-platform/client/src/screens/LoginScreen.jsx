@@ -1,5 +1,4 @@
-// ─── Imports ──────────────────────────────────────────────────────────────────
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,36 +13,42 @@ import {
   ScrollView,
   Alert,
   Image,
-} from 'react-native';
-import { authApi, setSession } from '../services/api';
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { authApi, setSession } from "../services/api";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
+const SCREEN_WIDTH = Dimensions.get("window").width;
+
+const API_BASE_URL = "http://192.168.1.7:5000";
+
 const COLORS = {
-  background:      '#1A0000',
-  card:            '#2A0000',
-  inputBg:         '#1F0000',
-  borderDefault:   '#2A2A3E',
-  borderCard:      '#4A0000',
-  borderInput:     '#5A0000',
-  borderFocused:   '#6C63FF',
-  primary:         '#D00000',
-  primaryLight:    '#FF4444',
-  white:           '#FFFFFF',
-  textSubtitle:    '#FFBBBB',
-  textLabel:       '#CC6666',
-  textPlaceholder: '#4A4A6A',
-  textMuted:       '#AAAACC',
-  orb1:            '#D00000',
-  orb2:            '#FF3333',
+  background: "#1A0000",
+  card: "#2A0000",
+  inputBg: "#1F0000",
+  borderDefault: "#2A2A3E",
+  borderCard: "#4A0000",
+  borderInput: "#5A0000",
+  borderFocused: "#6C63FF",
+  primary: "#D00000",
+  primaryBright: "#FF3333",
+  primaryLight: "#FF4444",
+  white: "#FFFFFF",
+  textSubtitle: "#FFBBBB",
+  textLabel: "#CC6666",
+  textPlaceholder: "#4A4A6A",
+  textMuted: "#AAAACC",
+  orb1: "#D00000",
+  orb2: "#FF3333",
 };
 
 const ANIMATION = {
-  logoFriction:  5,
-  logoTension:   60,
-  logoSpinMs:    600,
+  logoFriction: 5,
+  logoTension: 60,
+  logoSpinMs: 600,
   contentFadeMs: 500,
   slideFriction: 8,
-  slideTension:  50,
+  slideTension: 50,
   inputBorderMs: 200,
 };
 
@@ -51,7 +56,7 @@ const ANIMATION = {
 const AnimatedButton = ({ onPress, loading }) => {
   const scale = useRef(new Animated.Value(1)).current;
 
-  const handlePressIn  = () =>
+  const handlePressIn = () =>
     Animated.spring(scale, { toValue: 0.97, useNativeDriver: true }).start();
   const handlePressOut = () =>
     Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
@@ -68,7 +73,7 @@ const AnimatedButton = ({ onPress, loading }) => {
       >
         <View style={styles.loginBtnGradient}>
           <Text style={styles.loginBtnText}>
-            {loading ? '⏳  Logging in...' : 'Login'}
+            {loading ? "⏳  Logging in..." : "Login"}
           </Text>
         </View>
       </TouchableOpacity>
@@ -82,7 +87,7 @@ const InputField = ({
   value,
   onChangeText,
   secureTextEntry,
-  keyboardType = 'default',
+  keyboardType = "default",
   rightIcon,
   onRightIconPress,
 }) => {
@@ -96,31 +101,39 @@ const InputField = ({
       useNativeDriver: false,
     }).start();
 
-  const handleFocus = () => { setIsFocused(true);  animateBorder(1); };
-  const handleBlur  = () => { setIsFocused(false); animateBorder(0); };
+  const handleFocus = () => {
+    setIsFocused(true);
+    animateBorder(1);
+  };
+  const handleBlur = () => {
+    setIsFocused(false);
+    animateBorder(0);
+  };
 
   const borderColor = borderAnim.interpolate({
-    inputRange:  [0, 1],
+    inputRange: [0, 1],
     outputRange: [COLORS.borderDefault, COLORS.borderFocused],
   });
 
   const shadowOpacity = borderAnim.interpolate({
-    inputRange:  [0, 1],
+    inputRange: [0, 1],
     outputRange: [0, 0.3],
   });
 
   const focusedShadow = isFocused
     ? {
-        shadowColor:  COLORS.borderFocused,
+        shadowColor: COLORS.borderFocused,
         shadowOpacity,
         shadowRadius: 8,
         shadowOffset: { width: 0, height: 0 },
-        elevation:    4,
+        elevation: 4,
       }
     : {};
 
   return (
-    <Animated.View style={[styles.inputWrapper, { borderColor }, focusedShadow]}>
+    <Animated.View
+      style={[styles.inputWrapper, { borderColor }, focusedShadow]}
+    >
       <Text style={[styles.inputIcon, isFocused && styles.inputIconFocused]}>
         {icon}
       </Text>
@@ -156,11 +169,14 @@ const BackgroundOrbs = () => (
 
 const LogoSection = ({ scale, spin, opacity }) => (
   <Animated.View
-    style={[styles.logoContainer, { transform: [{ scale }, { rotate: spin }], opacity }]}
+    style={[
+      styles.logoContainer,
+      { transform: [{ scale }, { rotate: spin }], opacity },
+    ]}
   >
     <View style={styles.logoRing}>
       <Image
-        source={require('../../assets/pic1.png')}
+        source={require("../../assets/pic1.png")}
         style={styles.logo}
         resizeMode="contain"
       />
@@ -169,11 +185,13 @@ const LogoSection = ({ scale, spin, opacity }) => (
 );
 
 const TitleSection = ({ opacity, translateY }) => (
-  <Animated.View style={[styles.titleBlock, { opacity, transform: [{ translateY }] }]}>
+  <Animated.View
+    style={[styles.titleBlock, { opacity, transform: [{ translateY }] }]}
+  >
     <Text style={styles.appTitle}>Campus System</Text>
     <View style={styles.titleAccent} />
     <Text style={styles.subtitle}>
-      Welcome back, please login{'\n'}to your account.
+      Welcome back, please login{"\n"}to your account.
     </Text>
   </Animated.View>
 );
@@ -188,93 +206,98 @@ const Divider = () => (
 
 // ─── Main Screen ───────────────────────────────────────────────────────────────
 export default function LoginScreen({ navigation }) {
-  const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
-  const [showPwd,  setShowPwd]  = useState(false);
-  const [loading,  setLoading]  = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const fadeAnim  = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const logoScale = useRef(new Animated.Value(0.6)).current;
-  const logoSpin  = useRef(new Animated.Value(0)).current;
+  const logoSpin = useRef(new Animated.Value(0)).current;
 
   const spin = logoSpin.interpolate({
-    inputRange:  [0, 1],
-    outputRange: ['0deg', '360deg'],
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
   });
 
   useEffect(() => {
     Animated.sequence([
       Animated.parallel([
         Animated.spring(logoScale, {
-          toValue:         1,
-          friction:        ANIMATION.logoFriction,
-          tension:         ANIMATION.logoTension,
+          toValue: 1,
+          friction: ANIMATION.logoFriction,
+          tension: ANIMATION.logoTension,
           useNativeDriver: true,
         }),
         Animated.timing(logoSpin, {
-          toValue:         1,
-          duration:        ANIMATION.logoSpinMs,
+          toValue: 1,
+          duration: ANIMATION.logoSpinMs,
           useNativeDriver: true,
         }),
       ]),
       Animated.parallel([
         Animated.timing(fadeAnim, {
-          toValue:         1,
-          duration:        ANIMATION.contentFadeMs,
+          toValue: 1,
+          duration: ANIMATION.contentFadeMs,
           useNativeDriver: true,
         }),
         Animated.spring(slideAnim, {
-          toValue:         0,
-          friction:        ANIMATION.slideFriction,
-          tension:         ANIMATION.slideTension,
+          toValue: 0,
+          friction: ANIMATION.slideFriction,
+          tension: ANIMATION.slideTension,
           useNativeDriver: true,
         }),
       ]),
     ]).start();
   }, []);
 
-  // ─── Handlers ────────────────────────────────────────────────────────────────
-  const validateInputs = () => {
-    if (!email.trim()) {
-      Alert.alert('Missing Field', 'Please enter your university email.');
-      return false;
-    }
-    if (!password) {
-      Alert.alert('Missing Field', 'Please enter your password.');
-      return false;
-    }
-    return true;
-  };
-
   const handleLogin = async () => {
-    if (!validateInputs()) return;
+    if (!email.trim()) {
+      Alert.alert("Missing Field", "Please enter your university email.");
+      return;
+    }
+
+    if (!password) {
+      Alert.alert("Missing Field", "Please enter your password.");
+      return;
+    }
 
     setLoading(true);
+
     try {
       const data = await authApi.login({ email: email.trim(), password });
 
       if (data?.token) {
         await setSession({ token: data.token, role: data.role });
-        navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+        navigation.reset({ index: 0, routes: [{ name: "Home" }] });
       } else {
-        Alert.alert('Login Failed', data?.message || 'Invalid credentials');
+        Alert.alert("Login failed", data?.message || "Invalid credentials");
       }
     } catch (err) {
       Alert.alert(
-        'Login Failed',
-        err?.message || 'Network error. Verify the backend is running.',
+        "Login failed",
+        err?.message ||
+          "Network error. Verify the backend is running and API_BASE_URL is reachable.",
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
+  const handleGuestMode = async () => {
+    try {
+      await AsyncStorage.setItem("guest_mode", "true");
+      navigation.reset({ index: 0, routes: [{ name: "GuestHome" }] });
+    } catch (err) {
+      Alert.alert("Error", "Failed to enter guest mode");
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
@@ -291,7 +314,10 @@ export default function LoginScreen({ navigation }) {
           <TitleSection opacity={fadeAnim} translateY={slideAnim} />
 
           <Animated.View
-            style={[styles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+            style={[
+              styles.card,
+              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+            ]}
           >
             <Text style={styles.fieldLabel}>University Email</Text>
             <InputField
@@ -311,13 +337,13 @@ export default function LoginScreen({ navigation }) {
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPwd}
-              rightIcon={showPwd ? '🙈' : '👁️'}
+              rightIcon={showPwd ? "🙈" : "👁️"}
               onRightIconPress={() => setShowPwd((prev) => !prev)}
             />
 
             <TouchableOpacity
               style={styles.forgotRow}
-              onPress={() => navigation.navigate('ForgotPassword')}
+              onPress={() => navigation.navigate("ForgotPassword")}
             >
               <Text style={styles.forgotText}>Forgot Password?</Text>
             </TouchableOpacity>
@@ -327,23 +353,35 @@ export default function LoginScreen({ navigation }) {
             <Divider />
 
             <TouchableOpacity style={styles.ssoBtn}>
-              <Text style={styles.ssoBtnText}>🏛️  Sign in with University SSO</Text>
+              <Text style={styles.ssoBtnText}>
+                🏛️ Sign in with University SSO
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.registerRow}
-              onPress={() => navigation.navigate('Register')}
+              style={styles.forgotRow}
+              onPress={() => navigation.navigate("Register")}
             >
               <Text style={styles.forgotText}>
-                New here?{' '}
-                <Text style={styles.registerLink}>Create an account</Text>
+                New here?{" "}
+                <Text style={{ fontWeight: "800" }}>Create an account</Text>
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.ssoBtn,
+                { backgroundColor: COLORS.borderDefault, marginTop: 12 },
+              ]}
+              onPress={handleGuestMode}
+            >
+              <Text style={styles.ssoBtnText}>👤 Continue as Guest</Text>
             </TouchableOpacity>
           </Animated.View>
 
           <Animated.View style={{ opacity: fadeAnim }}>
             <Text style={styles.footer}>
-              Need help?{' '}
+              Need help?{" "}
               <Text style={styles.footerLink}>Contact IT Support</Text>
             </Text>
           </Animated.View>
@@ -366,16 +404,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: 24,
     paddingTop: 64,
     paddingBottom: 40,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   // Background orbs
   orb1: {
-    position: 'absolute',
+    position: "absolute",
     width: 360,
     height: 360,
     borderRadius: 180,
@@ -385,7 +423,7 @@ const styles = StyleSheet.create({
     right: -120,
   },
   orb2: {
-    position: 'absolute',
+    position: "absolute",
     width: 280,
     height: 280,
     borderRadius: 140,
@@ -395,14 +433,14 @@ const styles = StyleSheet.create({
     left: -80,
   },
   orb3: {
-    position: 'absolute',
+    position: "absolute",
     width: 160,
     height: 160,
     borderRadius: 80,
     backgroundColor: COLORS.orb1,
     opacity: 0.04,
-    top: '40%',
-    left: '5%',
+    top: "40%",
+    left: "5%",
   },
 
   // Logo
@@ -415,8 +453,8 @@ const styles = StyleSheet.create({
     borderRadius: 48,
     borderWidth: 2,
     borderColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 6,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 0 },
@@ -431,13 +469,13 @@ const styles = StyleSheet.create({
 
   // Title
   titleBlock: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 32,
   },
   appTitle: {
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
     fontSize: 32,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.white,
     letterSpacing: 0.5,
     marginBottom: 10,
@@ -452,20 +490,20 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: COLORS.textSubtitle,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
   },
 
   // Card
   card: {
-    width: '100%',
+    width: "100%",
     backgroundColor: COLORS.card,
     borderRadius: 24,
     padding: 24,
     marginBottom: 24,
     borderWidth: 1,
     borderColor: COLORS.borderCard,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.45,
     shadowRadius: 24,
@@ -473,18 +511,18 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.textLabel,
     letterSpacing: 1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     marginBottom: 8,
     marginLeft: 2,
   },
 
   // Input
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.inputBg,
     borderRadius: 14,
     borderWidth: 1.5,
@@ -504,7 +542,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: COLORS.white,
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   eyeBtn: {
     padding: 4,
@@ -517,31 +555,23 @@ const styles = StyleSheet.create({
     height: 16,
   },
 
-  // Forgot & Register
+  // Forgot password
   forgotRow: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     marginTop: 12,
     marginBottom: 24,
-  },
-  registerRow: {
-    alignSelf: 'center',
-    marginTop: 16,
   },
   forgotText: {
     color: COLORS.primaryLight,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: 0.2,
-  },
-  registerLink: {
-    fontWeight: '800',
-    color: COLORS.primaryLight,
   },
 
   // Login button
   loginBtn: {
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.5,
@@ -554,7 +584,7 @@ const styles = StyleSheet.create({
   loginBtnGradient: {
     backgroundColor: COLORS.primary,
     paddingVertical: 17,
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: 16,
     borderTopWidth: 1,
     borderTopColor: COLORS.primaryLight,
@@ -562,15 +592,15 @@ const styles = StyleSheet.create({
   loginBtnText: {
     color: COLORS.white,
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 1.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
 
   // Divider
   dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 20,
   },
   dividerLine: {
@@ -581,7 +611,7 @@ const styles = StyleSheet.create({
   dividerText: {
     color: COLORS.textLabel,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     marginHorizontal: 12,
     letterSpacing: 1,
   },
@@ -592,23 +622,23 @@ const styles = StyleSheet.create({
     borderColor: COLORS.borderInput,
     borderRadius: 14,
     paddingVertical: 15,
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: COLORS.inputBg,
   },
   ssoBtnText: {
     color: COLORS.textMuted,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   // Footer
   footer: {
     color: COLORS.textLabel,
     fontSize: 13,
-    textAlign: 'center',
+    textAlign: "center",
   },
   footerLink: {
     color: COLORS.primaryLight,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
