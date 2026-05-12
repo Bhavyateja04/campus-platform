@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Area,
@@ -98,7 +98,7 @@ const activityData = [
   { day: "Sun", reports: 16, approvals: 33 },
 ];
 
-const users = [
+const usersDefault = [
   {
     name: "Aarav Mehta",
     email: "aarav.mehta@campus.edu",
@@ -151,7 +151,7 @@ const users = [
   },
 ];
 
-const lostFoundItems = [
+const lostFoundItemsDefault = [
   {
     title: "Black Laptop Bag",
     type: "Lost",
@@ -196,7 +196,7 @@ const lostFoundItems = [
   },
 ];
 
-const products = [
+const productsDefault = [
   {
     name: "MacBook Air M2",
     category: "Electronics",
@@ -239,7 +239,7 @@ const products = [
   },
 ];
 
-const canteens = [
+const canteensDefault = [
   {
     name: "Pencil Canteen",
     menus: ["/menus/pencil-canteen.png"],
@@ -258,7 +258,7 @@ const canteens = [
   },
 ];
 
-const foodItems = [
+const foodItemsDefault = [
   {
     name: "Veg Maggie",
     price: "Rs. 40",
@@ -315,7 +315,7 @@ const foodItems = [
   },
 ];
 
-const notifications = [
+const notificationsDefault = [
   {
     title: "Placement drive shortlisted students published",
     priority: "High",
@@ -346,7 +346,7 @@ const notifications = [
   },
 ];
 
-const placements = [
+const placementsDefault = [
   {
     company: "Infosys",
     role: "Systems Engineer",
@@ -376,7 +376,7 @@ const placements = [
   },
 ];
 
-const memories = [
+const memoriesDefault = [
   {
     user: "Diya Rao",
     image:
@@ -431,7 +431,7 @@ const memories = [
   },
 ];
 
-const clubs = [
+const clubsDefault = [
   {
     name: "Robotics Club",
     members: 318,
@@ -461,7 +461,7 @@ const clubs = [
   },
 ];
 
-const examHalls = [
+const examHallsDefault = [
   {
     id: 1,
     hallName: "Hall A - Ground Floor",
@@ -512,7 +512,7 @@ const examHalls = [
   },
 ];
 
-const exams = [
+const examsDefault = [
   {
     id: 1,
     name: "Data Structures & Algorithms",
@@ -578,6 +578,52 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState("light");
   const active = sidebarItems.find((item) => item.id === activePage);
+
+  // API configuration
+  const API_BASE =
+    process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
+  const ADMIN_TOKEN = process.env.REACT_APP_ADMIN_TOKEN || "";
+
+  // Admin data (replace hardcoded mocks at runtime)
+  const [users, setUsers] = useState(usersDefault || []);
+  const [lostFoundItems, setLostFoundItems] = useState(
+    lostFoundItemsDefault || [],
+  );
+  const [placements, setPlacements] = useState(placementsDefault || []);
+  const [memories, setMemories] = useState(memoriesDefault || []);
+
+  const apiFetch = async (path, opts = {}) => {
+    const headers = opts.headers || {};
+    if (ADMIN_TOKEN) headers.Authorization = `Bearer ${ADMIN_TOKEN}`;
+    const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
+    if (!res.ok) throw new Error(`API error ${res.status} ${path}`);
+    return res.json();
+  };
+
+  useEffect(() => {
+    // Load key admin datasets in parallel; fall back to defaults on failure
+    (async () => {
+      try {
+        const [lostRes, placementsRes, memRes, usersRes] = await Promise.all([
+          apiFetch("/api/lostitems").catch(() => null),
+          apiFetch("/api/placements").catch(() => null),
+          apiFetch("/api/college-memories").catch(() => null),
+          apiFetch("/api/admin/viewusers").catch(() => null),
+        ]);
+
+        if (lostRes && lostRes.data) setLostFoundItems(lostRes.data);
+        if (placementsRes && placementsRes.data)
+          setPlacements(placementsRes.data);
+        if (memRes && memRes.data) setMemories(memRes.data.data || memRes.data);
+        if (usersRes && usersRes.data) setUsers(usersRes.data);
+      } catch (err) {
+        console.warn(
+          "Admin dashboard fetch failed, using defaults",
+          err.message || err,
+        );
+      }
+    })();
+  }, []);
 
   return (
     <div className={`admin-shell ${theme}`}>
