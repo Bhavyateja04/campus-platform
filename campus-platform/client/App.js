@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Feature screens (kept from feature_frontend1)
 import HomeScreen from "./src/screens/HomeScreen";
@@ -15,28 +16,58 @@ import MarketplaceScreen from "./src/screens/MarketplaceScreen";
 import CanteenMenuScreen from "./src/screens/CanteenMenuScreen";
 import CampusMapScreen from "./src/screens/CampusMapScreen";
 import ExamHallScreen from "./src/screens/ExamHallScreen";
+import FindLocationScreen from "./src/screens/FindLocationScreen";
 
 // Auth + main-branch placeholder screens (registered so Login flow works)
 import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
-import ResetPassword from "./src/screens/ResetPassword";
+import ResetPassword, {
+  ForgotPasswordScreen,
+  ForceResetScreen,
+} from "./src/screens/ResetPassword";
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [guestMode, setGuestMode] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkGuestMode = async () => {
+      try {
+        const guest = await AsyncStorage.getItem("guest_mode");
+        setGuestMode(guest === "true");
+      } catch (err) {
+        console.error("Error checking guest mode:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkGuestMode();
+  }, []);
+
+  if (loading) return null;
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName={guestMode ? "GuestHome" : "Home"}
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="ForgotPassword" component={ResetPassword} />
-        <Stack.Screen name="ForceReset" component={ResetPassword} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="ForceReset" component={ForceResetScreen} />
         <Stack.Screen name="ResetPassword" component={ResetPassword} />
 
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen
+          name="GuestHome"
+          component={HomeScreen}
+          options={{
+            unmountOnBlur: true,
+          }}
+        />
         <Stack.Screen name="Alerts" component={AlertsScreen} />
         <Stack.Screen name="About" component={AboutScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
@@ -49,6 +80,10 @@ export default function App() {
         <Stack.Screen name="CanteenMenu" component={CanteenMenuScreen} />
         <Stack.Screen name="CampusMap" component={CampusMapScreen} />
         <Stack.Screen name="ExamHall" component={ExamHallScreen} />
+        <Stack.Screen
+          name="FindLocationScreen"
+          component={FindLocationScreen}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
