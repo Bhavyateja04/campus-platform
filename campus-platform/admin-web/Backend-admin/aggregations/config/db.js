@@ -1,31 +1,88 @@
-const mongoose = require('mongoose');
+```js id="wnjlwm"
+// ======================================================
+// IMPORTS
+// ======================================================
+
+const mongoose = require("mongoose");
+
+
+// ======================================================
+// DATABASE CONNECTION
+// ======================================================
 
 /**
- * Connect to MongoDB with retry logic.
- * Uses Mongoose 8 defaults (no deprecated options needed).
+ * Establish MongoDB connection
+ * Includes:
+ * - automatic connection logging
+ * - error handling
+ * - reconnection listeners
  */
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+    // ==========================================
+    // CONNECT TO MONGODB
+    // ==========================================
 
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}/${conn.connection.name}`);
+    const connection = await mongoose.connect(
+      process.env.MONGO_URI
+    );
 
-    // ─── Connection event listeners ───
-    mongoose.connection.on('error', (err) => {
-      console.error(`❌ MongoDB connection error: ${err.message}`);
+    console.log(
+      `✅ MongoDB Connected: ${connection.connection.host}/${connection.connection.name}`
+    );
+
+    // ==========================================
+    // CONNECTION EVENT LISTENERS
+    // ==========================================
+
+    mongoose.connection.on("error", (error) => {
+      console.error(
+        `❌ MongoDB Error: ${error.message}`
+      );
     });
 
-    mongoose.connection.on('disconnected', () => {
-      console.warn('⚠️  MongoDB disconnected. Attempting reconnection...');
+    mongoose.connection.on(
+      "disconnected",
+      () => {
+        console.warn(
+          "⚠️ MongoDB disconnected. Attempting reconnection..."
+        );
+      }
+    );
+
+    mongoose.connection.on(
+      "reconnected",
+      () => {
+        console.log(
+          "✅ MongoDB reconnected successfully."
+        );
+      }
+    );
+
+    mongoose.connection.on("connected", () => {
+      console.log(
+        "✅ MongoDB connection established."
+      );
     });
 
-    mongoose.connection.on('reconnected', () => {
-      console.log('✅ MongoDB reconnected successfully.');
-    });
   } catch (error) {
-    console.error(`❌ MongoDB connection failed: ${error.message}`);
+
+    // ==========================================
+    // CONNECTION FAILURE
+    // ==========================================
+
+    console.error(
+      `❌ MongoDB Connection Failed: ${error.message}`
+    );
+
     process.exit(1);
   }
 };
 
+
+// ======================================================
+// EXPORTS
+// ======================================================
+
 module.exports = connectDB;
+```
