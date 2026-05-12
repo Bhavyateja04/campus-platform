@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useContext, createContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Area,
@@ -573,6 +573,183 @@ function useFilteredData(items, search, keys) {
   }, [items, keys, search]);
 }
 
+const AppDataContext = createContext(null);
+
+function useAppData() {
+  return useContext(AppDataContext);
+}
+
+function normalizeList(response) {
+  if (!response) return [];
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response.data)) return response.data;
+  if (Array.isArray(response.data?.data)) return response.data.data;
+  if (Array.isArray(response.items)) return response.items;
+  return [];
+}
+
+function normalizeUsers(records = []) {
+  return records.map((user, index) => ({
+    id: user._id || user.id || `user-${index}`,
+    name: user.name || "Unnamed User",
+    email: user.email || "-",
+    phone: user.phone || "-",
+    joined: user.createdAt
+      ? new Date(user.createdAt).toLocaleDateString("en-GB")
+      : "-",
+    activity: Number(user.activity ?? user.activityScore ?? 0),
+    avatar:
+      user.profileImage || `https://i.pravatar.cc/120?img=${(index % 70) + 1}`,
+    department: user.department || user.branch || "Unknown",
+    reports: Number(user.reports ?? user.reportCount ?? 0),
+  }));
+}
+
+function normalizeLostFound(records = []) {
+  return records.map((item, index) => ({
+    id: item._id || item.id || `lost-${index}`,
+    title: item.itemName || item.title || "Untitled item",
+    type:
+      String(item.status || item.type || "lost")
+        .charAt(0)
+        .toUpperCase() + String(item.status || item.type || "lost").slice(1),
+    user: item.postedBy?.name || item.postedBy?.email || item.user || "Unknown",
+    email: item.postedBy?.email || item.email || "-",
+    phone: item.postedBy?.phone || item.phone || "-",
+    location: item.location || "Unknown",
+    time: item.createdAt
+      ? new Date(item.createdAt).toLocaleString("en-GB")
+      : "-",
+    status: item.status || "Open",
+    claims: Array.isArray(item.matchSuggestions)
+      ? item.matchSuggestions.length
+      : Number(item.claims ?? 0),
+    image:
+      item.imageUrl ||
+      item.image ||
+      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=500&q=80",
+    details: item.description || item.details || "No description available.",
+    blocked: Boolean(item.blocked),
+    matchSuggestions: item.matchSuggestions || [],
+    aiAnalysis: item.aiAnalysis || null,
+    imageSimilarityPercentage: item.imageSimilarityPercentage ?? null,
+  }));
+}
+
+function normalizeGoods(records = []) {
+  return records.map((item, index) => ({
+    id: item._id || item.id || `good-${index}`,
+    name: item.itemName || item.title || "Unnamed item",
+    category: item.category || "Other",
+    price: item.price != null ? `Rs. ${item.price}` : item.amount || "-",
+    seller: item.sellerId?.name || item.seller || "Unknown",
+    phone: item.contactNumber || item.phone || item.sellerId?.phone || "-",
+    email: item.sellerId?.email || item.email || "-",
+    image:
+      item.imageUrl ||
+      item.image ||
+      "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80",
+  }));
+}
+
+function normalizeCanteens(records = []) {
+  return records.map((canteen, index) => ({
+    id: canteen._id || canteen.id || `canteen-${index}`,
+    name: canteen.name || `Canteen ${index + 1}`,
+    menus: canteen.menu
+      ? Array.isArray(canteen.menu)
+        ? canteen.menu
+        : [canteen.menu]
+      : canteen.image
+        ? [canteen.image]
+        : [],
+    accent:
+      canteen.accent || ["#1d4ed8", "#f97316", "#166534", "#eab308"][index % 4],
+  }));
+}
+
+function normalizeNotifications(records = []) {
+  return records.map((note, index) => ({
+    id: note._id || note.id || `note-${index}`,
+    title: note.title || "Notification",
+    priority: note.priority || (note.type === "System" ? "Low" : "Medium"),
+    time: note.createdAt
+      ? new Date(note.createdAt).toLocaleString("en-GB")
+      : "Just now",
+    body: note.body || "",
+    unread: Boolean(note.unread ?? true),
+    audience: note.audience || "All Students",
+  }));
+}
+
+function normalizePlacements(records = []) {
+  return records.map((post, index) => ({
+    id: post._id || post.id || `placement-${index}`,
+    company: post.company || "Unknown company",
+    role: post.position || post.role || "Open role",
+    package: post.salary != null ? `Rs. ${post.salary}` : post.package || "-",
+    deadline: post.createdAt
+      ? new Date(post.createdAt).toLocaleDateString("en-GB")
+      : "-",
+    logo: (post.company || "UN").slice(0, 2).toUpperCase(),
+    applicants: Number(post.applicants ?? 0),
+    desc: post.description || "",
+  }));
+}
+
+function normalizeMemories(records = []) {
+  return records.map((memory, index) => ({
+    id: memory._id || memory.id || `memory-${index}`,
+    user: memory.authorId?.name || memory.user || "Unknown",
+    image:
+      memory.imageUrl ||
+      memory.image ||
+      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=700&q=80",
+    caption: memory.title || memory.caption || "Untitled memory",
+    likes: Number(memory.likes ?? 0),
+    views: Number(memory.views ?? 0),
+    blocked: Boolean(memory.blocked),
+    status:
+      memory.reportCount > 0
+        ? memory.reportCount > 2
+          ? "AI Flagged"
+          : "Reported"
+        : memory.status || "Approved",
+    risk: Math.min(100, Number(memory.reportCount ?? 0) * 25),
+    reports: Number(memory.reportCount ?? memory.reports ?? 0),
+    complaint: memory.description || "No complaints",
+  }));
+}
+
+function normalizeClubs(records = []) {
+  return records.map((club, index) => ({
+    id: club._id || club.id || `club-${index}`,
+    name: club.name || `Club ${index + 1}`,
+    members: Number(club.members ?? 0),
+    requests: Number(club.requests ?? 0),
+    event: club.event || club.description || "No upcoming event",
+    banner:
+      club.banner ||
+      `https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=700&q=80`,
+    engagement: Number(club.engagement ?? 0),
+  }));
+}
+
+function normalizeExamSearch(records = []) {
+  return records.map((exam, index) => ({
+    id: exam._id || exam.id || `exam-${index}`,
+    name: exam.name || exam.subject || "Exam",
+    code: exam.code || exam.examCode || "-",
+    date: exam.date || "-",
+    time: exam.time || "-",
+    hallId: exam.hallId || 1,
+    studentsCount: Number(exam.studentsCount ?? 0),
+    proctors: Number(exam.proctors ?? 0),
+    status: exam.status || "Scheduled",
+    duration: Number(exam.duration ?? 0),
+  }));
+}
+
 function App() {
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -580,17 +757,21 @@ function App() {
   const active = sidebarItems.find((item) => item.id === activePage);
 
   // API configuration
-  const API_BASE =
-    process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
-  const ADMIN_TOKEN = process.env.REACT_APP_ADMIN_TOKEN || "";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || "";
 
   // Admin data (replace hardcoded mocks at runtime)
-  const [users, setUsers] = useState(usersDefault || []);
-  const [lostFoundItems, setLostFoundItems] = useState(
-    lostFoundItemsDefault || [],
-  );
-  const [placements, setPlacements] = useState(placementsDefault || []);
-  const [memories, setMemories] = useState(memoriesDefault || []);
+  const [users, setUsers] = useState(usersDefault);
+  const [lostFoundItems, setLostFoundItems] = useState(lostFoundItemsDefault);
+  const [goodsItems, setGoodsItems] = useState(productsDefault);
+  const [canteens, setCanteens] = useState(canteensDefault);
+  const [foodItems, setFoodItems] = useState(foodItemsDefault);
+  const [notifications, setNotifications] = useState(notificationsDefault);
+  const [placements, setPlacements] = useState(placementsDefault);
+  const [memories, setMemories] = useState(memoriesDefault);
+  const [clubs, setClubs] = useState(clubsDefault);
+  const [examHalls, setExamHalls] = useState(examHallsDefault);
+  const [examsData, setExamsData] = useState(examsDefault);
 
   const apiFetch = async (path, opts = {}) => {
     const headers = opts.headers || {};
@@ -604,18 +785,39 @@ function App() {
     // Load key admin datasets in parallel; fall back to defaults on failure
     (async () => {
       try {
-        const [lostRes, placementsRes, memRes, usersRes] = await Promise.all([
-          apiFetch("/api/lostitems").catch(() => null),
-          apiFetch("/api/placements").catch(() => null),
-          apiFetch("/api/college-memories").catch(() => null),
+        const [
+          usersRes,
+          lostRes,
+          goodsRes,
+          canteensRes,
+          notificationsRes,
+          placementsRes,
+          memRes,
+          clubsRes,
+          examsRes,
+        ] = await Promise.all([
           apiFetch("/api/admin/viewusers").catch(() => null),
+          apiFetch("/api/lostitems").catch(() => null),
+          apiFetch("/api/goods").catch(() => null),
+          apiFetch("/api/canteens").catch(() => null),
+          apiFetch("/api/notifications").catch(() => null),
+          apiFetch("/api/placements").catch(() => null),
+          apiFetch("/api/college-memories/all-memories").catch(() => null),
+          apiFetch("/api/clubs").catch(() => null),
+          apiFetch("/api/exam-search").catch(() => null),
         ]);
 
-        if (lostRes && lostRes.data) setLostFoundItems(lostRes.data);
-        if (placementsRes && placementsRes.data)
-          setPlacements(placementsRes.data);
-        if (memRes && memRes.data) setMemories(memRes.data.data || memRes.data);
-        if (usersRes && usersRes.data) setUsers(usersRes.data);
+        setUsers(normalizeUsers(normalizeList(usersRes)));
+        setLostFoundItems(normalizeLostFound(normalizeList(lostRes)));
+        setGoodsItems(normalizeGoods(normalizeList(goodsRes)));
+        setCanteens(normalizeCanteens(normalizeList(canteensRes)));
+        setNotifications(
+          normalizeNotifications(normalizeList(notificationsRes)),
+        );
+        setPlacements(normalizePlacements(normalizeList(placementsRes)));
+        setMemories(normalizeMemories(normalizeList(memRes)));
+        setClubs(normalizeClubs(normalizeList(clubsRes)));
+        setExamsData(normalizeExamSearch(normalizeList(examsRes)));
       } catch (err) {
         console.warn(
           "Admin dashboard fetch failed, using defaults",
@@ -626,44 +828,60 @@ function App() {
   }, []);
 
   return (
-    <div className={`admin-shell ${theme}`}>
-      <Sidebar
-        activePage={activePage}
-        setActivePage={setActivePage}
-        open={sidebarOpen}
-        close={() => setSidebarOpen(false)}
-      />
-      <main className="workspace">
-        <Topbar
-          title={active.label}
-          onMenu={() => setSidebarOpen(true)}
-          theme={theme}
-          setTheme={setTheme}
+    <AppDataContext.Provider
+      value={{
+        users,
+        lostFoundItems,
+        goodsItems,
+        canteens,
+        foodItems,
+        notifications,
+        placements,
+        memories,
+        clubs,
+        examHalls,
+        examsData,
+      }}
+    >
+      <div className={`admin-shell ${theme}`}>
+        <Sidebar
+          activePage={activePage}
+          setActivePage={setActivePage}
+          open={sidebarOpen}
+          close={() => setSidebarOpen(false)}
         />
-        <AnimatePresence mode="wait">
-          <motion.section
-            key={activePage}
-            className="page-motion"
-            initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: -14, filter: "blur(8px)" }}
-            transition={{ duration: 0.28, ease: "easeOut" }}
-          >
-            {activePage === "dashboard" && <DashboardPage />}
-            {activePage === "users" && <UsersPage />}
-            {activePage === "lostfound" && <LostFoundPage />}
-            {activePage === "marketplace" && <MarketplacePage />}
-            {activePage === "canteens" && <CanteensPage />}
-            {activePage === "notifications" && <NotificationsPage />}
-            {activePage === "placements" && <PlacementsPage />}
-            {activePage === "memories" && <MemoriesPage />}
-            {activePage === "clubs" && <ClubsPage />}
-            {activePage === "examhall" && <ExamHallPage />}
-            {activePage === "settings" && <SettingsPage />}
-          </motion.section>
-        </AnimatePresence>
-      </main>
-    </div>
+        <main className="workspace">
+          <Topbar
+            title={active.label}
+            onMenu={() => setSidebarOpen(true)}
+            theme={theme}
+            setTheme={setTheme}
+          />
+          <AnimatePresence mode="wait">
+            <motion.section
+              key={activePage}
+              className="page-motion"
+              initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -14, filter: "blur(8px)" }}
+              transition={{ duration: 0.28, ease: "easeOut" }}
+            >
+              {activePage === "dashboard" && <DashboardPage />}
+              {activePage === "users" && <UsersPage />}
+              {activePage === "lostfound" && <LostFoundPage />}
+              {activePage === "marketplace" && <MarketplacePage />}
+              {activePage === "canteens" && <CanteensPage />}
+              {activePage === "notifications" && <NotificationsPage />}
+              {activePage === "placements" && <PlacementsPage />}
+              {activePage === "memories" && <MemoriesPage />}
+              {activePage === "clubs" && <ClubsPage />}
+              {activePage === "examhall" && <ExamHallPage />}
+              {activePage === "settings" && <SettingsPage />}
+            </motion.section>
+          </AnimatePresence>
+        </main>
+      </div>
+    </AppDataContext.Provider>
   );
 }
 
@@ -873,6 +1091,24 @@ function FiCheckCircleFallback() {
 }
 
 function DashboardPage() {
+  const {
+    users,
+    lostFoundItems,
+    goodsItems,
+    notifications,
+    placements,
+    memories,
+    clubs,
+    examsData,
+  } = useAppData();
+
+  const activeUsers = users.length;
+  const activeMarketplace = goodsItems.length;
+  const resolvedItems = lostFoundItems.filter(
+    (item) => String(item.status).toLowerCase() === "resolved",
+  ).length;
+  const activePlacements = placements.length;
+
   return (
     <>
       <PageHeader
@@ -884,29 +1120,29 @@ function DashboardPage() {
         <StatCard
           icon={FiUsers}
           label="Active users"
-          value="17,410"
+          value={activeUsers.toLocaleString()}
           change="+18.4% this month"
           tone="violet"
         />
         <StatCard
           icon={FiShoppingBag}
           label="Marketplace GMV"
-          value="Rs. 8.7L"
+          value={`${activeMarketplace.toLocaleString()} listings`}
           change="+12.8% this week"
           tone="green"
         />
         <StatCard
           icon={FiCompass}
           label="Resolved items"
-          value="842"
-          change="+31 claims closed"
+          value={resolvedItems.toLocaleString()}
+          change={`${lostFoundItems.length} total reports`}
           tone="amber"
         />
         <StatCard
           icon={FiBriefcase}
           label="Placement posts"
-          value="74"
-          change="+9 new drives"
+          value={activePlacements.toLocaleString()}
+          change={`${notifications.length} notifications`}
           tone="blue"
         />
       </div>
@@ -985,10 +1221,10 @@ function DashboardPage() {
             <span>Now</span>
           </div>
           {[
-            "Marketplace listing verified",
-            "Fake lost-item report quarantined",
-            "Adobe placement post reviewed",
-            "Admin notification delivered",
+            `${goodsItems[0]?.name || "Marketplace"} listing verified`,
+            `${lostFoundItems[0]?.title || "Lost item"} queued for review`,
+            `${placements[0]?.company || "Placement"} post reviewed`,
+            `${notifications[0]?.title || "Admin notification"} delivered`,
           ].map((item, index) => (
             <motion.div
               className="timeline-item"
@@ -1011,6 +1247,7 @@ function DashboardPage() {
 }
 
 function UsersPage() {
+  const { users } = useAppData();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const filtered = useFilteredData(users, search, [
@@ -1099,12 +1336,14 @@ function ProfileDetails({ user }) {
 }
 
 function LostFoundPage() {
+  const { lostFoundItems } = useAppData();
   const [search, setSearch] = useState("");
   const [type, setType] = useState("All");
   const [posts, setPosts] = useState(lostFoundItems);
   const [selected, setSelected] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [toast, setToast] = useState("");
+  useEffect(() => setPosts(lostFoundItems), [lostFoundItems]);
   const filtered = useFilteredData(posts, search, [
     "title",
     "user",
@@ -1281,13 +1520,14 @@ function LostFoundDetails({ item }) {
 }
 
 function MarketplacePage() {
+  const { goodsItems } = useAppData();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const categories = [
     "All",
-    ...new Set(products.map((product) => product.category)),
+    ...new Set(goodsItems.map((product) => product.category)),
   ];
-  const filtered = useFilteredData(products, search, [
+  const filtered = useFilteredData(goodsItems, search, [
     "name",
     "seller",
     "category",
@@ -1337,7 +1577,8 @@ function MarketplacePage() {
 }
 
 function CanteensPage() {
-  const [selectedName, setSelectedName] = useState(canteens[0].name);
+  const { canteens, foodItems } = useAppData();
+  const [selectedName, setSelectedName] = useState(canteens[0]?.name || "");
   const [menusByCanteen, setMenusByCanteen] = useState(() =>
     Object.fromEntries(
       canteens.map((canteen) => [canteen.name, canteen.menus]),
@@ -1350,6 +1591,14 @@ function CanteensPage() {
   const [toast, setToast] = useState("");
   const selected = canteens.find((canteen) => canteen.name === selectedName);
   const menus = menusByCanteen[selectedName] || [];
+  useEffect(() => {
+    if (!selectedName && canteens[0]) setSelectedName(canteens[0].name);
+    setMenusByCanteen(
+      Object.fromEntries(
+        canteens.map((canteen) => [canteen.name, canteen.menus]),
+      ),
+    );
+  }, [canteens, selectedName]);
   const categories = [
     "All",
     ...new Set(foodItems.map((item) => item.category)),
@@ -1549,6 +1798,7 @@ function CanteensPage() {
 }
 
 function NotificationsPage() {
+  const { notifications } = useAppData();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(0);
   const [items, setItems] = useState(notifications);
@@ -1565,19 +1815,47 @@ function NotificationsPage() {
     "priority",
     "body",
   ]);
+  useEffect(() => setItems(notifications), [notifications]);
   const sendNotification = (event) => {
     event.preventDefault();
-    setItems([
+    fetch(
+      (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000") +
+        "/api/notifications",
       {
-        title: form.title,
-        priority: form.priority,
-        time: "Just now",
-        body: `Sent by Admin. ${form.body}`,
-        unread: true,
-        audience: form.audience,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(import.meta.env.VITE_ADMIN_TOKEN
+            ? { Authorization: `Bearer ${import.meta.env.VITE_ADMIN_TOKEN}` }
+            : {}),
+        },
+        body: JSON.stringify({
+          title: form.title,
+          body: form.body,
+          type: form.priority,
+          audience: form.audience === "All Students" ? "all" : "user",
+        }),
       },
-      ...items,
-    ]);
+    )
+      .then((res) => res.json())
+      .then((result) => {
+        if (result?.data) {
+          setItems([normalizeNotifications([result.data])[0], ...items]);
+        }
+      })
+      .catch(() => {
+        setItems([
+          {
+            title: form.title,
+            priority: form.priority,
+            time: "Just now",
+            body: `Sent by Admin. ${form.body}`,
+            unread: true,
+            audience: form.audience,
+          },
+          ...items,
+        ]);
+      });
     setForm({
       title: "",
       body: "",
@@ -1748,9 +2026,11 @@ function NotificationsPage() {
 }
 
 function PlacementsPage() {
+  const { placements } = useAppData();
   const [search, setSearch] = useState("");
   const [posts, setPosts] = useState(placements);
   const [pendingDelete, setPendingDelete] = useState(null);
+  useEffect(() => setPosts(placements), [placements]);
   const filtered = useFilteredData(posts, search, ["company", "role"]);
   return (
     <>
@@ -1833,10 +2113,12 @@ function PlacementsPage() {
 }
 
 function MemoriesPage() {
+  const { memories } = useAppData();
   const [items, setItems] = useState(memories);
   const [tab, setTab] = useState("Approved");
   const [search, setSearch] = useState("");
   const tabs = ["Approved", "Pending", "AI Flagged", "Reported"];
+  useEffect(() => setItems(memories), [memories]);
   const filtered = useFilteredData(items, search, [
     "user",
     "caption",
@@ -2008,6 +2290,7 @@ function MemoriesPage() {
 }
 
 function ClubsPage() {
+  const { clubs } = useAppData();
   return (
     <>
       <PageHeader
@@ -2041,9 +2324,9 @@ function ClubsPage() {
 }
 
 function ExamHallPage() {
+  const { examHalls, examsData } = useAppData();
   const [search, setSearch] = useState("");
   const [halls, setHalls] = useState(examHalls);
-  const [examsData, setExamsData] = useState(exams);
   const [selectedHall, setSelectedHall] = useState(null);
   const [newExam, setNewExam] = useState({
     name: "",
@@ -2055,6 +2338,7 @@ function ExamHallPage() {
     duration: 120,
   });
   const [showAddExam, setShowAddExam] = useState(false);
+  useEffect(() => setHalls(examHalls), [examHalls]);
 
   const filteredHalls = useFilteredData(halls, search, [
     "hallName",
