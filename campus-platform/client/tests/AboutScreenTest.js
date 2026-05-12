@@ -1,4 +1,7 @@
+// Simulates network delay for realistic async behavior
 const delay = (ms = 400) => new Promise((res) => setTimeout(res, ms));
+
+// -- University Info --
 
 export const getUniversityInfo = async () => {
   await delay();
@@ -15,6 +18,8 @@ export const getUniversityInfo = async () => {
   };
 };
 
+// -- Stats (NAAC rating, student count, etc.) --
+
 export const getUniversityStats = async () => {
   await delay(300);
   return [
@@ -24,6 +29,8 @@ export const getUniversityStats = async () => {
     { val: '50+', label: 'Departments', icon: 'school-outline' },
   ];
 };
+
+// -- Campus Gallery --
 
 export const getCampusImages = async () => {
   await delay(350);
@@ -46,6 +53,8 @@ export const getCampusImages = async () => {
   ];
 };
 
+// -- About Sections (image + text cards) --
+
 export const getAboutSections = async () => {
   await delay(300);
   return [
@@ -66,19 +75,23 @@ export const getAboutSections = async () => {
   ];
 };
 
+// -- Features & Facilities --
+
 export const getUniversityFeatures = async () => {
   await delay(300);
   return [
-    { id: 'library',    icon: 'library-outline',   label: 'Central Library',    desc: 'Modern digital and physical library facilities',       color: '#4A6FA5' },
-    { id: 'labs',       icon: 'desktop-outline',    label: 'Computer Labs',      desc: 'Advanced laboratories with latest technology',         color: '#6A1B9A' },
-    { id: 'clubs',      icon: 'people-outline',     label: 'Student Clubs',      desc: 'Technical, cultural and social activity clubs',        color: '#E07B3A' },
-    { id: 'placements', icon: 'briefcase-outline',  label: 'Placements',         desc: 'Top placement training and recruitment drives',        color: '#00796B' },
-    { id: 'research',   icon: 'flask-outline',      label: 'Research Labs',      desc: 'Innovation and research focused laboratories',         color: '#2E4D7A' },
-    { id: 'sports',     icon: 'football-outline',   label: 'Sports Facilities',  desc: 'Indoor and outdoor sports infrastructure',             color: '#1565C0' },
-    { id: 'campus',     icon: 'business-outline',   label: 'Modern Campus',      desc: 'Smart classrooms and modern infrastructure',           color: '#6A1B9A' },
-    { id: 'cafeteria',  icon: 'cafe-outline',       label: 'Cafeteria',          desc: 'Healthy food and spacious dining areas',               color: '#00796B' },
+    { id: 'library',    icon: 'library-outline',   label: 'Central Library',    desc: 'Modern digital and physical library facilities',  color: '#4A6FA5' },
+    { id: 'labs',       icon: 'desktop-outline',    label: 'Computer Labs',      desc: 'Advanced laboratories with latest technology',    color: '#6A1B9A' },
+    { id: 'clubs',      icon: 'people-outline',     label: 'Student Clubs',      desc: 'Technical, cultural and social activity clubs',   color: '#E07B3A' },
+    { id: 'placements', icon: 'briefcase-outline',  label: 'Placements',         desc: 'Top placement training and recruitment drives',   color: '#00796B' },
+    { id: 'research',   icon: 'flask-outline',      label: 'Research Labs',      desc: 'Innovation and research focused laboratories',    color: '#2E4D7A' },
+    { id: 'sports',     icon: 'football-outline',   label: 'Sports Facilities',  desc: 'Indoor and outdoor sports infrastructure',        color: '#1565C0' },
+    { id: 'campus',     icon: 'business-outline',   label: 'Modern Campus',      desc: 'Smart classrooms and modern infrastructure',      color: '#6A1B9A' },
+    { id: 'cafeteria',  icon: 'cafe-outline',       label: 'Cafeteria',          desc: 'Healthy food and spacious dining areas',          color: '#00796B' },
   ];
 };
+
+// -- Contact (website, email, social) --
 
 export const getContactInfo = async () => {
   await delay(250);
@@ -103,3 +116,9 @@ export const getContactInfo = async () => {
       id: 'instagram',
       icon: 'logo-instagram',
       label: 'Instagram',
+      val: '@adityauniversity',
+      color: '#6A1B9A',
+      url: 'https://www.instagram.com/adityauniversity',
+    },
+  ];
+};
