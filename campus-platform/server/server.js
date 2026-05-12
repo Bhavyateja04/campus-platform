@@ -26,6 +26,8 @@ const placementRoutes = require("./src/routes/placementRoutes");
 const canteensRoutes = require("./src/routes/canteensRoute");
 const notificationsRoutes = require("./src/routes/notificationsRoutes");
 const moderationRoutes = require("./src/routes/moderationRoutes");
+const examRoutes = require("./src/routes/ExamRoutes");
+const summarizeRoutes = require("./src/routes/summarizeRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -38,6 +40,8 @@ app.use("/api/placements", placementRoutes);
 app.use("/api/canteens", canteensRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/moderate", moderationRoutes);
+app.use("/api", examRoutes);
+app.use("/api/summarize", summarizeRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "campus-platform-server" });
