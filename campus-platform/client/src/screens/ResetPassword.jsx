@@ -27,20 +27,20 @@ const { width } = Dimensions.get("window");
 const API_BASE = "http://YOUR_IP:5000"; // Replace with your server's IP
 
 const C = {
-  bg: "#1A0000",
-  card: "#2A0000",
-  cardBorder: "#4A0000",
-  input: "#1F0000",
-  inputBorder: "#5A0000",
-  primary: "#D00000",
-  primaryLight: "#FF4444",
-  primaryDark: "#900000",
+  bg: "#F7F9FB",
+  card: "#FFFFFF",
+  cardBorder: "#E6E9EE",
+  input: "#FBFCFE",
+  inputBorder: "#E0E4EA",
+  primary: "#1E3A8A",
+  primaryLight: "#3b82f6",
+  primaryDark: "#16325a",
   white: "#FFFFFF",
-  grey1: "#FFBBBB",
-  grey2: "#CC6666",
-  grey3: "#5A0000",
-  amber: "#FF8800",
-  red: "#FF3333",
+  grey1: "#6B7280",
+  grey2: "#9CA3AF",
+  grey3: "#E6E9EE",
+  amber: "#F59E0B",
+  red: "#EF4444",
 };
 
 // ─── Shared entry animation (used by all three screens) ───────────────────────
@@ -236,9 +236,9 @@ const PrimaryBtn = ({ label, onPress, loading }) => {
 // ─── AlertBox ─────────────────────────────────────────────────────────────────
 
 const ALERT_STYLES = {
-  error: { text: "#FF4444", bg: "rgba(208,0,0,0.15)" },
-  success: { text: C.white, bg: "rgba(255,255,255,0.08)" },
-  info: { text: "#FF9999", bg: "rgba(208,0,0,0.1)" },
+  error: { text: "#FF4444", bg: "rgba(208,0,0,0.12)" },
+  success: { text: C.primaryDark, bg: "rgba(30,58,138,0.06)" },
+  info: { text: "#FF9999", bg: "rgba(208,0,0,0.08)" },
 };
 
 const AlertBox = ({ type, msg }) => {
@@ -260,7 +260,7 @@ const ScreenShell = ({ children }) => (
     style={{ flex: 1 }}
     behavior={Platform.OS === "ios" ? "padding" : "height"}
   >
-    <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+    <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
     <ScrollView
       contentContainerStyle={s.scroll}
       keyboardShouldPersistTaps="handled"
@@ -918,7 +918,7 @@ const s = StyleSheet.create({
   pageTitle: {
     fontSize: 28,
     fontWeight: "800",
-    color: C.white,
+    color: C.primaryDark,
     letterSpacing: 0.3,
     marginBottom: 10,
     textAlign: "center",
@@ -983,7 +983,7 @@ const s = StyleSheet.create({
   },
   inputIco: { fontSize: 17, marginRight: 10, opacity: 0.4 },
   inputIcoFocused: { opacity: 1 },
-  inputText: { flex: 1, color: C.white, fontSize: 15, fontWeight: "500" },
+  inputText: { flex: 1, color: C.primaryDark, fontSize: 15, fontWeight: "500" },
   eyeBtn: { padding: 4 },
   eyeIco: { fontSize: 17, opacity: 0.5 },
 
@@ -1060,7 +1060,7 @@ const s = StyleSheet.create({
     borderWidth: 2,
     borderColor: C.grey3,
     backgroundColor: C.input,
-    color: C.white,
+    color: C.primaryDark,
     fontSize: 22,
     fontWeight: "700",
     textAlign: "center",

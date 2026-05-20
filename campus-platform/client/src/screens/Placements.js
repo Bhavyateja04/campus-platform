@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { placementsApi } from '../services/api';
+import { API_BASE_URL } from '../config';
+import axios from 'axios';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   StatusBar, Dimensions, Animated, Easing, Platform,
@@ -178,6 +180,8 @@ const UploadModal = ({ onClose, onSubmitted }) => {
   const [experience,  setExperience]  = useState('');
   const [tips,        setTips]        = useState('');
   const [showCompDrop, setShowCompDrop] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
+  const [summarized,  setSummarized]  = useState(false);
 
   useEffect(() => {
     Animated.spring(slideY, { toValue:0, speed:18, bounciness:4, useNativeDriver:true }).start();
@@ -188,6 +192,32 @@ const UploadModal = ({ onClose, onSubmitted }) => {
   };
 
   const [submitting, setSubmitting] = useState(false);
+
+  const summarizeExperience = async () => {
+    if (!experience.trim()) {
+      Alert.alert('Empty Field', 'Please write your experience before summarizing.');
+      return;
+    }
+    setSummarizing(true);
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/summarize/placement-experience`,
+        { text: experience }
+      );
+      if (response.data.success && response.data.summary) {
+        setExperience(response.data.summary);
+        setSummarized(true);
+        Alert.alert('Summary Complete', 'Your experience has been condensed.', [
+          { text: 'OK', onPress: () => setSummarized(false) }
+        ]);
+      }
+    } catch (err) {
+      console.error('Summarization error:', err);
+      Alert.alert('Error', 'Could not summarize text. Try again.');
+    } finally {
+      setSummarizing(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!name.trim() || !role.trim() || !company || !difficulty || !experience.trim()) {
@@ -295,7 +325,31 @@ const UploadModal = ({ onClose, onSubmitted }) => {
             </View>
           )}
 
-          {/* Difficulty */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <Text style={UM.label}>Interview Experience <Text style={UM.required}>*</Text></Text>
+            <TouchableOpacity 
+              onPress={summarizeExperience}
+              disabled={summarizing || !experience.trim()}
+              style={{ opacity: (summarizing || !experience.trim()) ? 0.5 : 1 }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: C.primaryPale, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                <Ionicons name={summarizing ? "hourglass" : "sparkles"} size={14} color={C.primary} />
+                <Text style={{ fontSize: 11, fontWeight: '600', color: C.primaryText }}>
+                  {summarizing ? 'Summarizing...' : 'Summarize'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+          <TextInput
+            style={[UM.input, UM.textarea]}
+            placeholder="Describe the rounds, questions asked, atmosphere..."
+            placeholderTextColor={C.textLight}
+            value={experience}
+            onChangeText={(text) => { setExperience(text); setSummarized(false); }}
+            multiline
+            textAlignVertical="top"
+          />
+
           <Text style={UM.label}>Difficulty <Text style={UM.required}>*</Text></Text>
           <View style={UM.diffRow}>
             {DIFFICULTY_OPTIONS.map(d => {
@@ -314,18 +368,6 @@ const UploadModal = ({ onClose, onSubmitted }) => {
               );
             })}
           </View>
-
-          {/* Interview Experience */}
-          <Text style={UM.label}>Interview Experience <Text style={UM.required}>*</Text></Text>
-          <TextInput
-            style={[UM.input, UM.textarea]}
-            placeholder="Describe the rounds, questions asked, atmosphere..."
-            placeholderTextColor={C.textLight}
-            value={experience}
-            onChangeText={setExperience}
-            multiline
-            textAlignVertical="top"
-          />
 
           {/* Preparation Tips */}
           <Text style={UM.label}>Preparation Tips <Text style={UM.optional}>(optional)</Text></Text>

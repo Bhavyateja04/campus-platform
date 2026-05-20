@@ -1,4 +1,3 @@
-// ─── Imports ──────────────────────────────────────────────────────────────────
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
@@ -15,6 +14,7 @@ import {
   Alert,
   Image,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApi, setSession } from "../services/api";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -23,23 +23,23 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 const API_BASE_URL = "http://192.168.1.7:5000";
 
 const COLORS = {
-  background: "#1A0000",
-  card: "#2A0000",
-  inputBg: "#1F0000",
-  borderDefault: "#2A2A3E",
-  borderCard: "#4A0000",
-  borderInput: "#5A0000",
-  borderFocused: "#6C63FF",
-  primary: "#D00000",
-  primaryBright: "#FF3333",
-  primaryLight: "#FF4444",
+  background: "#F7F9FB", // soft off-white
+  card: "#FFFFFF",
+  inputBg: "#FBFCFE",
+  borderDefault: "#E6E9EE",
+  borderCard: "#E6E9EE",
+  borderInput: "#E0E4EA",
+  borderFocused: "#1E3A8A",
+  primary: "#1E3A8A", // deep navy
+  primaryBright: "#2952b8",
+  primaryLight: "#3b82f6",
   white: "#FFFFFF",
-  textSubtitle: "#FFBBBB",
-  textLabel: "#CC6666",
-  textPlaceholder: "#4A4A6A",
-  textMuted: "#AAAACC",
-  orb1: "#D00000",
-  orb2: "#FF3333",
+  textSubtitle: "#6B7280",
+  textLabel: "#374151",
+  textPlaceholder: "#9CA3AF",
+  textMuted: "#6B7280",
+  orb1: "#E6EEF9",
+  orb2: "#EEF6FF",
 };
 
 const ANIMATION = {
@@ -285,12 +285,21 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const handleGuestMode = async () => {
+    try {
+      await AsyncStorage.setItem("guest_mode", "true");
+      navigation.reset({ index: 0, routes: [{ name: "GuestHome" }] });
+    } catch (err) {
+      Alert.alert("Error", "Failed to enter guest mode");
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -357,6 +366,16 @@ export default function LoginScreen({ navigation }) {
                 New here?{" "}
                 <Text style={{ fontWeight: "800" }}>Create an account</Text>
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.ssoBtn,
+                { backgroundColor: COLORS.borderDefault, marginTop: 12 },
+              ]}
+              onPress={handleGuestMode}
+            >
+              <Text style={styles.ssoBtnText}>👤 Continue as Guest</Text>
             </TouchableOpacity>
           </Animated.View>
 
@@ -457,7 +476,7 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
     fontSize: 32,
     fontWeight: "800",
-    color: COLORS.white,
+    color: COLORS.textLabel,
     letterSpacing: 0.5,
     marginBottom: 10,
   },
@@ -521,7 +540,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: COLORS.white,
+    color: COLORS.textLabel,
     fontSize: 15,
     fontWeight: "500",
   },

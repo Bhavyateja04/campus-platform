@@ -11,6 +11,7 @@ import {
   Easing,
   Platform,
   ImageBackground,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,6 +23,8 @@ import {
   memoriesApi,
 } from "../services/api";
 import { getSocket } from "../services/realtime";
+import { isGuestMode, exitGuestMode, isFeatureAllowedForGuest } from "../utils/guestMode";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import FindLocationScreen from "./FindLocationScreen";
 const { width } = Dimensions.get("window");
 
@@ -35,6 +38,7 @@ const C = {
   purple: "#6A1B9A",
   teal: "#00796B",
   gold: "#FFB300",
+  red: "#DC2626",
   bg: "#F5F8FC",
   surface: "#FFFFFF",
   textDark: "#0D1B2A",
@@ -229,7 +233,7 @@ const SecHeader = ({ title, onMore }) => (
 
 // ─── FeatureCard — strict fixed size, no dynamic per-card variance ─────────────
 
-const FeatureCard = ({ item, delay, navigation }) => {
+const FeatureCard = ({ item, delay, onPress }) => {
   const anim = useEntrance(delay, 18);
   const press = useRef(new Animated.Value(1)).current;
   const onIn = () =>
@@ -255,7 +259,7 @@ const FeatureCard = ({ item, delay, navigation }) => {
         onPressIn={onIn}
         onPressOut={onOut}
         activeOpacity={1}
-        onPress={() => item.route && navigation?.navigate(item.route)}
+        onPress={onPress}
         style={FC.card}
       >
         {/* Gradient icon box — strictly fixed size */}
@@ -348,7 +352,7 @@ const FeedbackCard = ({ item }) => (
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 
-const Hero = ({ SB_H, navigation, userName, unreadCount, stats }) => {
+const Hero = ({ SB_H, handleNav, userName, unreadCount, stats, isGuest }) => {
   const HERO_H = 360 + SB_H;
   const logoAnim = useEntrance(100, -12);
   const greetAnim = useEntrance(260, 14);
@@ -402,7 +406,7 @@ const Hero = ({ SB_H, navigation, userName, unreadCount, stats }) => {
         </View>
         <TouchableOpacity
           style={S.bellBtn}
-          onPress={() => navigation?.navigate("Alerts")}
+          onPress={() => handleNav("Alerts")}
         >
           <Ionicons name="notifications-outline" size={20} color="#fff" />
           <PulseBadge count={unreadCount} />
@@ -414,7 +418,7 @@ const Hero = ({ SB_H, navigation, userName, unreadCount, stats }) => {
           Welcome back,
         </Animated.Text>
         <Animated.Text style={[nameAnim, S.heroName]}>
-          {userName || "Student"} 👋
+          {isGuest ? "Welcome, Guest" : userName + " 👋"}
         </Animated.Text>
         <Animated.View style={[pillAnim, S.heroPill]}>
           <Ionicons name="sparkles-outline" size={12} color={C.primaryLight} />
@@ -453,6 +457,7 @@ export default function HomeScreen({ navigation }) {
 
   const [userName, setUserName] = useState("Student");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isGuest, setIsGuest] = useState(false);
   const [stats, setStats] = useState({
     lostFound: "—",
     memories: "—",
@@ -462,7 +467,18 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     let cancelled = false;
 
+    // Check if in guest mode
     (async () => {
+      const guestMode = await isGuestMode();
+      if (cancelled) return;
+      setIsGuest(guestMode);
+    })();
+
+    (async () => {
+      if (isGuest) {
+        setUserName("Guest");
+        return;
+      }
       const stored = await getUser();
       if (cancelled) return;
       if (stored?.name) setUserName(String(stored.name).split(" ")[0]);
@@ -531,6 +547,27 @@ export default function HomeScreen({ navigation }) {
 
   const handleNav = (routeKey) => {
     if (routeKey === "Home") return;
+
+    // Check guest access for protected features
+    if (isGuest && !isFeatureAllowedForGuest(routeKey.replace(/[^a-zA-Z_]/g, "_"))) {
+      Alert.alert(
+        "Guest Access",
+        "This feature requires a full account. Please log in or create an account.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Log In",
+            onPress: async () => {
+              await exitGuestMode();
+              await AsyncStorage.removeItem("auth_token");
+              navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+            },
+          },
+        ]
+      );
+      return;
+    }
+
     navigation.navigate(routeKey);
   };
 
@@ -548,7 +585,6 @@ export default function HomeScreen({ navigation }) {
         backgroundColor="transparent"
       />
 
-      {/* Sticky header */}
       <Animated.View
         style={[S.sticky, { opacity: stickyOp }]}
         pointerEvents="box-none"
@@ -561,13 +597,28 @@ export default function HomeScreen({ navigation }) {
             <Text style={S.stickyApp}>Campix</Text>
             <Text style={S.stickyUni}>Aditya University</Text>
           </View>
-          <TouchableOpacity
-            style={S.stickyBell}
-            onPress={() => navigation.navigate("Alerts")}
-          >
-            <Ionicons name="notifications" size={20} color="#fff" />
-            <PulseBadge count={unreadCount} />
-          </TouchableOpacity>
+
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            {isGuest && (
+              <View style={{ 
+                backgroundColor: "rgba(255,255,255,0.2)", 
+                paddingHorizontal: 8, 
+                paddingVertical: 4,
+                borderRadius: 6
+              }}>
+                <Text style={{ fontSize: 10, fontWeight: "600", color: "#fff" }}>
+                  👤 Guest Mode
+                </Text>
+              </View>
+            )}
+            <TouchableOpacity
+              style={S.stickyBell}
+              onPress={() => handleNav("Alerts")}
+            >
+              <Ionicons name="notifications" size={20} color="#fff" />
+              <PulseBadge count={unreadCount} />
+            </TouchableOpacity>
+          </View>
         </LinearGradient>
       </Animated.View>
 
@@ -583,10 +634,11 @@ export default function HomeScreen({ navigation }) {
       >
         <Hero
           SB_H={SB_H}
-          navigation={navigation}
+          handleNav={handleNav}
           userName={userName}
           unreadCount={unreadCount}
           stats={stats}
+          isGuest={isGuest}
         />
 
         {/* ── Campus Map Banner — ✅ FIX: marginTop 24→10 closes the gap ── */}
@@ -594,7 +646,7 @@ export default function HomeScreen({ navigation }) {
           <View style={[S.sec, { paddingHorizontal: 16 }]}>
             <TouchableOpacity
               activeOpacity={0.84}
-              onPress={() => navigation?.navigate("FindLocationScreen")}
+              onPress={() => handleNav("FindLocationScreen")}
             >
               <LinearGradient
                 colors={[C.primaryDark, C.primary]}
@@ -628,7 +680,7 @@ export default function HomeScreen({ navigation }) {
                       key={f.id}
                       item={f}
                       delay={60 + (rowIdx * 4 + colIdx) * 35}
-                      navigation={navigation}
+                      onPress={() => handleNav(f.route)}
                     />
                   ))}
                 </View>
@@ -643,7 +695,7 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity
               activeOpacity={0.82}
               style={S.aboutTile}
-              onPress={() => navigation.navigate("About")}
+              onPress={() => handleNav("About")}
             >
               <LinearGradient
                 colors={[C.primaryDark, C.primary]}
@@ -685,30 +737,90 @@ export default function HomeScreen({ navigation }) {
       {/* ── Bottom Nav ── */}
       <View style={S.navWrap}>
         <LinearGradient colors={["#FFFFFFFD", C.bg]} style={S.navBar}>
-          {NAV.map((item) => {
-            const on = item.key === "Home";
-            return (
+          {isGuest ? (
+            // Guest mode navigation
+            <>
               <TouchableOpacity
-                key={item.key}
                 style={S.navItem}
-                onPress={() => handleNav(item.key)}
+                onPress={() => handleNav("Home")}
                 activeOpacity={0.7}
               >
-                {on && <View style={S.navPip} />}
-                <View style={[S.navIconBox, on && S.navIconBoxOn]}>
-                  <Ionicons
-                    name={on ? item.icon : item.icon + "-outline"}
-                    size={23}
-                    color={on ? C.primary : C.textLight}
-                  />
-                  {item.key === "Alerts" && <PulseBadge />}
+                <View style={S.navPip} />
+                <View style={[S.navIconBox, S.navIconBoxOn]}>
+                  <Ionicons name="home" size={23} color={C.primary} />
                 </View>
-                <Text style={[S.navLabel, on && S.navLabelOn]}>
-                  {item.label}
-                </Text>
+                <Text style={[S.navLabel, S.navLabelOn]}>Home</Text>
               </TouchableOpacity>
-            );
-          })}
+
+              <TouchableOpacity
+                style={S.navItem}
+                onPress={() => handleNav("About")}
+                activeOpacity={0.7}
+              >
+                <View style={[S.navIconBox]}>
+                  <Ionicons name="school-outline" size={23} color={C.textLight} />
+                </View>
+                <Text style={S.navLabel}>About</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={S.navItem}
+                onPress={async () => {
+                  Alert.alert(
+                    "Exit Guest Mode",
+                    "You will be logged out and returned to the login screen.",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Exit",
+                        style: "destructive",
+                        onPress: async () => {
+                          await exitGuestMode();
+                          await AsyncStorage.removeItem("auth_token");
+                          navigation.reset({
+                            index: 0,
+                            routes: [{ name: "Login" }],
+                          });
+                        },
+                      },
+                    ]
+                  );
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[S.navIconBox]}>
+                  <Ionicons name="log-out-outline" size={23} color={C.red} />
+                </View>
+                <Text style={[S.navLabel, { color: C.red }]}>Exit</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            // Regular logged-in user navigation
+            NAV.map((item) => {
+              const on = item.key === "Home";
+              return (
+                <TouchableOpacity
+                  key={item.key}
+                  style={S.navItem}
+                  onPress={() => handleNav(item.key)}
+                  activeOpacity={0.7}
+                >
+                  {on && <View style={S.navPip} />}
+                  <View style={[S.navIconBox, on && S.navIconBoxOn]}>
+                    <Ionicons
+                      name={on ? item.icon : item.icon + "-outline"}
+                      size={23}
+                      color={on ? C.primary : C.textLight}
+                    />
+                    {item.key === "Alerts" && <PulseBadge count={unreadCount} />}
+                  </View>
+                  <Text style={[S.navLabel, on && S.navLabelOn]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })
+          )}
         </LinearGradient>
       </View>
     </View>

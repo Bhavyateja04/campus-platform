@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Feature screens (kept from feature_frontend1)
 import HomeScreen from "./src/screens/HomeScreen";
@@ -28,10 +29,29 @@ import ResetPassword, {
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [guestMode, setGuestMode] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkGuestMode = async () => {
+      try {
+        const guest = await AsyncStorage.getItem("guest_mode");
+        setGuestMode(guest === "true");
+      } catch (err) {
+        console.error("Error checking guest mode:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkGuestMode();
+  }, []);
+
+  if (loading) return null;
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName={guestMode ? "GuestHome" : "Home"}
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Login" component={LoginScreen} />
@@ -41,6 +61,13 @@ export default function App() {
         <Stack.Screen name="ResetPassword" component={ResetPassword} />
 
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen
+          name="GuestHome"
+          component={HomeScreen}
+          options={{
+            unmountOnBlur: true,
+          }}
+        />
         <Stack.Screen name="Alerts" component={AlertsScreen} />
         <Stack.Screen name="About" component={AboutScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
