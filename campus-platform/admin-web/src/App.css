@@ -16,52 +16,245 @@ select {
 button {
   cursor: pointer;
 }
+.loader-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}
 
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #ddd;
+  border-top: 4px solid #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.toast {
+  padding: 12px 18px;
+  border-radius: 10px;
+  color: white;
+  width: fit-content;
+}
+
+.toast.success {
+  background: #22c55e;
+}
+
+.toast.error {
+  background: #ef4444;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 20px;
+}
+
+.page-eyebrow {
+  color: #6366f1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-top: 8px;
+  color: #111827;
+}
+
+.page-text {
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+.page-action {
+  display: flex;
+  align-items: center;
+}
+
+.grid-layout {
+  display: grid;
+  gap: 20px;
+}
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.chart-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+}
+.panel {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+}
 .admin-shell {
-  --bg: #f5f7fb;
-  --surface: rgba(255, 255, 255, 0.82);
-  --surface-strong: #ffffff;
-  --text: #172033;
-  --muted: #667085;
-  --border: rgba(120, 132, 158, 0.2);
-  --hover: rgba(108, 92, 231, 0.08);
-  --chart-grid: rgba(102, 112, 133, 0.18);
-  --shadow: 0 18px 45px rgba(27, 39, 70, 0.09);
-  --violet: #6c5ce7;
-  --green: #00b894;
-  --amber: #f5a623;
-  --blue: #0984e3;
-  --red: #ff5c7a;
+  --bg: #fdfcff;
+  --surface: rgba(255, 255, 255, 0.6);
+  --surface-strong: rgba(255, 255, 255, 0.8);
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: rgba(255, 255, 255, 0.4);
+  --hover: rgba(124, 58, 237, 0.08);
+  --chart-grid: rgba(124, 58, 237, 0.05);
+  --shadow: 0 8px 32px rgba(124, 58, 237, 0.08);
+  --shadow-hover: 0 12px 48px rgba(217, 70, 239, 0.15);
+  --violet: #7c3aed;
+  --pink: #d946ef;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --blue: #3b82f6;
+  --red: #ef4444;
   min-height: 100vh;
   color: var(--text);
-  background:
-    radial-gradient(circle at 20% 0%, rgba(108, 92, 231, 0.16), transparent 28%),
-    radial-gradient(circle at 85% 10%, rgba(0, 184, 148, 0.14), transparent 26%),
+  background: 
+    radial-gradient(circle at 10% 0%, rgba(124, 58, 237, 0.15), transparent 30%),
+    radial-gradient(circle at 90% 10%, rgba(217, 70, 239, 0.12), transparent 28%),
+    radial-gradient(circle at 50% 100%, rgba(16, 185, 129, 0.1), transparent 40%),
     var(--bg);
 }
 
 .admin-shell.dark {
-  --bg: #0d111c;
-  --surface: rgba(21, 27, 43, 0.78);
-  --surface-strong: #151b2b;
-  --text: #f7f8fc;
-  --muted: #aab2c5;
-  --border: rgba(230, 235, 255, 0.12);
-  --hover: rgba(255, 255, 255, 0.07);
-  --chart-grid: rgba(230, 235, 255, 0.12);
-  --shadow: 0 22px 60px rgba(0, 0, 0, 0.28);
+  --bg: #090314;
+  --surface: rgba(15, 23, 42, 0.45);
+  --surface-strong: rgba(15, 23, 42, 0.7);
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --border: rgba(255, 255, 255, 0.1);
+  --hover: rgba(255, 255, 255, 0.05);
+  --chart-grid: rgba(255, 255, 255, 0.05);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-hover: 0 12px 48px rgba(124, 58, 237, 0.25);
+  background: 
+    radial-gradient(circle at 10% 0%, rgba(124, 58, 237, 0.25), transparent 30%),
+    radial-gradient(circle at 90% 10%, rgba(217, 70, 239, 0.2), transparent 28%),
+    radial-gradient(circle at 50% 100%, rgba(16, 185, 129, 0.15), transparent 40%),
+    var(--bg);
+}
+.club-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(320px, 1fr)
+  );
+  gap: 24px;
+}
+
+.club-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px
+    rgba(0, 0, 0, 0.08);
+}
+
+.club-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.club-content {
+  padding: 20px;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 14px 0;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.crud-modal {
+  background: white;
+  width: 500px;
+  padding: 30px;
+  border-radius: 20px;
+}
+
+.modal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-group input,
+.field-group textarea {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.button-row {
+  display: flex;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.primary-button {
+  background: #6366f1;
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.soft-button {
+  background: #eef2ff;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 10px;
+  cursor: pointer;
 }
 
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 30;
-  width: 282px;
-  padding: 24px 18px;
-  background: rgba(16, 20, 36, 0.92);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  backdrop-filter: blur(22px);
+  width: 260px;
+  padding: 24px 16px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  color: var(--text);
   display: flex;
   flex-direction: column;
   gap: 28px;
@@ -75,14 +268,14 @@ button {
 }
 
 .brand-mark {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   display: grid;
   place-items: center;
-  font-weight: 900;
-  background: linear-gradient(135deg, #6c5ce7, #00d2d3);
-  box-shadow: 0 16px 36px rgba(108, 92, 231, 0.4);
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--violet), var(--pink));
+  color: white;
 }
 
 .brand strong,
@@ -93,7 +286,7 @@ button {
 .brand span,
 .sidebar-card span,
 .nav-item em {
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--muted);
   font-size: 12px;
 }
 
@@ -106,23 +299,25 @@ button {
   position: relative;
   width: 100%;
   border: 0;
-  color: rgba(255, 255, 255, 0.74);
+  color: var(--muted);
   background: transparent;
-  border-radius: 16px;
-  padding: 13px 14px;
+  border-radius: 8px;
+  padding: 10px 12px;
   display: grid;
-  grid-template-columns: 22px 1fr auto;
+  grid-template-columns: 20px 1fr auto;
   align-items: center;
   gap: 12px;
   text-align: left;
   overflow: hidden;
-  transition: color 0.22s, transform 0.22s;
+  transition: background 0.15s, color 0.15s;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .nav-item:hover,
 .nav-item.active {
-  color: #fff;
-  transform: translateX(3px);
+  color: var(--text);
+  background: var(--hover);
 }
 
 .active-pill {
@@ -131,6 +326,9 @@ button {
   background: rgba(255, 255, 255, 0.13);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: inherit;
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  z-index: 0;
 }
 
 .nav-item svg,
@@ -150,9 +348,9 @@ button {
 .sidebar-card {
   margin-top: auto;
   padding: 16px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, rgba(108, 92, 231, 0.28), rgba(0, 184, 148, 0.18));
-  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 12px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
 }
 
 .sidebar-card svg,
@@ -163,23 +361,22 @@ button {
 }
 
 .workspace {
-  margin-left: 282px;
+  margin-left: 260px;
   min-height: 100vh;
-  padding: 24px;
+  padding: 24px 32px;
 }
 
 .topbar {
   position: sticky;
   top: 0;
   z-index: 20;
-  min-height: 86px;
-  margin-bottom: 22px;
-  padding: 16px 18px;
-  border: 1px solid var(--border);
-  border-radius: 24px;
+  min-height: 64px;
+  margin: -24px -32px 32px -32px;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border);
   background: var(--surface);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -205,11 +402,14 @@ button {
 .placement-card h3,
 .club-card h3 {
   margin: 0;
-  letter-spacing: 0;
+  letter-spacing: -0.02em;
+  font-weight: 600;
 }
 
 .topbar h1 {
-  font-size: clamp(26px, 3vw, 42px);
+  font-size: 14px;
+  color: var(--muted);
+  text-transform: capitalize;
 }
 
 .topbar-actions,
@@ -224,6 +424,11 @@ button {
   gap: 10px;
 }
 
+.topbar-actions,
+.button-row {
+  flex-wrap: wrap;
+}
+
 .topbar-actions {
   justify-content: flex-end;
 }
@@ -234,10 +439,11 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 11px 14px;
+  padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 8px;
   background: var(--surface-strong);
+  font-size: 14px;
 }
 
 .global-search input,
@@ -251,10 +457,10 @@ button {
 }
 
 .icon-button {
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 8px;
   color: var(--text);
   background: var(--surface-strong);
   display: grid;
@@ -266,8 +472,9 @@ button {
 .soft-button:hover,
 .primary-button:hover,
 .danger-button:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+  filter: brightness(1.05);
 }
 
 .badge-dot {
@@ -296,6 +503,7 @@ button {
   justify-content: space-between;
   align-items: flex-end;
   gap: 18px;
+  flex-wrap: wrap;
 }
 
 .eyebrow {
@@ -331,10 +539,24 @@ button {
 .club-card,
 .notification-card {
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: 12px;
   background: var(--surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:hover,
+.panel:hover,
+.item-card:hover,
+.product-card:hover,
+.placement-card:hover,
+.memory-card:hover,
+.club-card:hover,
+.notification-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
 }
 
 .stat-card {
@@ -406,12 +628,13 @@ button {
 .status,
 .pill,
 .priority {
-  border-radius: 999px;
-  padding: 5px 10px;
+  border-radius: 6px;
+  padding: 4px 8px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 500;
   background: var(--hover);
-  color: var(--violet);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .timeline-panel {
@@ -507,7 +730,7 @@ button {
   position: absolute;
   inset: 0 auto 0 0;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--violet), var(--green));
+  background: var(--violet);
 }
 
 .progress b {
@@ -522,9 +745,11 @@ button {
 .primary-button,
 .danger-button {
   border: 0;
-  border-radius: 14px;
-  padding: 10px 13px;
-  transition: transform 0.22s, box-shadow 0.22s;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
 }
 
@@ -535,12 +760,13 @@ button {
 
 .primary-button {
   color: white;
-  background: linear-gradient(135deg, var(--violet), #00d2d3);
+  background: linear-gradient(135deg, var(--violet), var(--pink));
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);
 }
 
 .danger-button {
   color: white;
-  background: linear-gradient(135deg, #ff5c7a, #ff8f70);
+  background: var(--red);
 }
 
 .primary-button,
@@ -552,9 +778,9 @@ button {
 }
 
 .ghost-danger {
-  background: rgba(255, 92, 122, 0.14);
-  color: #be123c;
-  border: 1px solid rgba(255, 92, 122, 0.25);
+  background: transparent;
+  color: var(--red);
+  border: 1px solid var(--border);
 }
 
 .toast {
@@ -967,6 +1193,19 @@ button {
   gap: 7px;
   color: var(--muted);
   font-weight: 700;
+  text-align: left;
+}
+
+.notification-form .checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+}
+
+.notification-form .checkbox-row input {
+  width: 18px;
+  height: 18px;
 }
 
 .notification-form input,
@@ -984,6 +1223,10 @@ button {
 .notification-form textarea {
   min-height: 120px;
   resize: vertical;
+}
+
+.notification-form .button-row {
+  justify-content: flex-end;
 }
 
 .priority.high {
@@ -1157,6 +1400,10 @@ button {
   gap: 10px;
 }
 
+.profile-modal .button-row {
+  justify-content: center;
+}
+
 .profile-modal img {
   width: 86px;
   height: 86px;
@@ -1177,6 +1424,10 @@ button {
   padding: 12px;
   border-radius: 16px;
   background: var(--hover);
+}
+
+.panel-title {
+  align-items: center;
 }
 
 .side-detail {

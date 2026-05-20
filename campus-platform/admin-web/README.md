@@ -1,16 +1,48 @@
-# React + Vite
+# Campus Admin Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This workspace contains a Vite frontend and an Express/MongoDB backend.
 
-Currently, two official plugins are available:
+## Run the backend
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```powershell
+cd Backend
+npm install
+npm run dev
+```
 
-## React Compiler
+The backend listens on `http://localhost:5000` and now exposes a dev auth token endpoint plus CRUD routes for users, lost & found, marketplace, canteens, notifications, memories, clubs, placements, exam halls, and exams.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Run the frontend
 
-## Expanding the ESLint configuration
+```powershell
+cd ..
+npm install
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Run both locally
+
+From the project root you can start both the backend and frontend together:
+
+```powershell
+npm install
+npm run dev:all
+```
+
+The frontend automatically requests a development admin token from the backend and stores it locally, so you do not need to paste a JWT manually during local development.
+
+## Password login
+
+New users created from the admin panel receive a generated password by email and can authenticate through `POST /api/auth/login` with `{ "email": "...", "password": "..." }`.
+
+## Environment
+
+If needed, set these values in `.env` files:
+
+- `Backend/.env`: `MONGO_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`
+- `Backend/.env` for welcome emails: `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_SECURE`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM`
+- `Backend/.env` optional preview mode: `EMAIL_TEST_MODE=true`
+- Frontend `.env`: `VITE_API_BASE_URL` or `VITE_ADMIN_TOKEN` (optional)
+
+If the SMTP variables are not set, the backend now fails the welcome-email send with a clear error instead of silently pretending the message was delivered.
+If you want a console-only preview during development, set `EMAIL_TEST_MODE=true`.
