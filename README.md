@@ -1,4 +1,4 @@
-# Aditya University Smart Student App
+# Smart Student App
 
 A digital platform designed to solve everyday campus problems and improve the overall student experience at **Aditya University,Surampalem**.
 
