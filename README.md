@@ -1,6 +1,6 @@
 # Smart Student App
 
-A digital platform designed to solve everyday campus problems and improve the overall student experience at **Aditya University,Surampalem**.
+A digital platform designed to solve everyday campus problems and improve the overall student experience at **Aditya University, Surampalem**.
 
 ---
 
@@ -10,7 +10,7 @@ University students often face many small but common problems in their daily cam
 
 - Losing personal items
 - Difficulty navigating the campus
-- Long waiting times in canteens
+- Long waiting times in canteens and accessing menu
 - Lack of access to second-hand materials
 - Difficulty finding placement guidance
 - Lack of communication about university events or notices
