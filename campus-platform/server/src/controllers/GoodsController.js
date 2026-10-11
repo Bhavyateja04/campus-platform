@@ -19,7 +19,7 @@ const serializeGoods = (item) => ({
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Fetch a goods item by ID. Returns 404 if not found.
+ * Fetches a good s item that matches the ID. Returns 404 if not found.
  */
 const findItemOrFail = async (id, res) => {
   const item = await Goods.findById(id);
